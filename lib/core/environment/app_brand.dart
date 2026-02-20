@@ -1,0 +1,4 @@
+enum AppBrand {
+  yaanam,
+  clientA,
+}
