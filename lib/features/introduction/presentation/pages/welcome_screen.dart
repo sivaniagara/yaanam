@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:yaanam/features/introduction/presentation/widgets/brand_name.dart';
 import 'package:yaanam/features/introduction/presentation/widgets/brand_quotes.dart';
@@ -85,7 +86,7 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       ),
                         onPressed: (){
-
+                          context.go('/signUp');
                         },
                         child: Text('Start with email or phone', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white),)
                     ),
@@ -96,7 +97,7 @@ class WelcomeScreen extends StatelessWidget {
                         Text('Already have an account? ', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white),),
                         TextButton(
                           onPressed: () {
-                            // Your sign-in logic here
+                            context.go('/signIn');
                           },
                           child: Text(
                             'Sign In',

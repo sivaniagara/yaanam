@@ -7,6 +7,7 @@ class AppColors {
   /// - Main brand color for buttons, app bar, primary actions
   /// - Example: ElevatedButton background, AppBar background
   static const Color primary = Color(0xFFCA5049);     // Vibrant Blue
+  static const Color primaryDark = Color(0xFFCA5049);     // Vibrant Blue
 
   /// **Secondary Color** (Supporting Accent)
   /// - Success states, secondary buttons, highlights

@@ -7,4 +7,5 @@ class AppImages{
   static final String logo = '$yaanamPng/logo.png';
   static final String statue = '$yaanamPng/statue.png';
   static final String welcomeStatue = '$yaanamPng/welcome_statue.png';
+  static final String bike = '$yaanamPng/bike.png';
 }

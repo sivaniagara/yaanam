@@ -2,7 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:yaanam/features/auth/presentation/pages/reset_password_page.dart';
+import 'package:yaanam/features/auth/presentation/pages/signin_page.dart';
+import 'package:yaanam/features/auth/presentation/pages/verification_code_page.dart';
 
+import '../../features/auth/presentation/pages/signup_page.dart';
+import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/introduction/presentation/pages/splash_screen.dart';
 import '../../features/introduction/presentation/pages/welcome_screen.dart';
 
@@ -37,6 +42,7 @@ Widget pageSlider(context, animation, secondaryAnimation, child){
 
 final router = GoRouter(
   initialLocation: '/',
+  // initialLocation: '/dashboard',
   debugLogDiagnostics: true,
   routes: [
     GoRoute(
@@ -46,6 +52,26 @@ final router = GoRouter(
     GoRoute(
       path: '/welcomeScreen',
       builder: (context, state) => const WelcomeScreen(),
+    ),
+    GoRoute(
+      path: '/signIn',
+      builder: (context, state) => const SignInPage(),
+    ),
+    GoRoute(
+      path: '/signUp',
+      builder: (context, state) => const SignUpPage(),
+    ),
+    GoRoute(
+      path: '/resetPassword',
+      builder: (context, state) => const ResetPasswordPage(),
+    ),
+    GoRoute(
+      path: '/verificationCode',
+      builder: (context, state) => const VerificationCodePage(),
+    ),
+    GoRoute(
+      path: '/dashboard',
+      builder: (context, state) => const DashboardPage(),
     ),
   ],
 );
