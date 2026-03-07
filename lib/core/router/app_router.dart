@@ -2,12 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:yaanam/core/router/route_names.dart';
 import 'package:yaanam/features/auth/presentation/pages/reset_password_page.dart';
 import 'package:yaanam/features/auth/presentation/pages/signin_page.dart';
 import 'package:yaanam/features/auth/presentation/pages/verification_code_page.dart';
 
 import '../../features/auth/presentation/pages/signup_page.dart';
+import '../../features/dashboard/presentation/pages/create_trip_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
+import '../../features/dashboard/presentation/pages/trip_tracking_page.dart';
 import '../../features/introduction/presentation/pages/splash_screen.dart';
 import '../../features/introduction/presentation/pages/welcome_screen.dart';
 
@@ -41,8 +44,7 @@ Widget pageSlider(context, animation, secondaryAnimation, child){
 }
 
 final router = GoRouter(
-  initialLocation: '/',
-  // initialLocation: '/dashboard',
+  initialLocation: RouteNames.verificationCode,
   debugLogDiagnostics: true,
   routes: [
     GoRoute(
@@ -67,11 +69,21 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/verificationCode',
-      builder: (context, state) => const VerificationCodePage(),
+      builder: (context, state) {
+        final String targetIdentifier = state.extra as String? ?? 'your email/phone';
+        return VerificationCodePage(targetIdentifier: targetIdentifier);
+      },
     ),
     GoRoute(
       path: '/dashboard',
       builder: (context, state) => const DashboardPage(),
+    ),
+    GoRoute(
+      path: '/create-trip',
+      builder: (context, state) => const CreateTripPage(),
+    ),
+    GoRoute(
+      path: '/trip-tracking',  builder: (context, state) => const TripTrackingPage(),
     ),
   ],
 );

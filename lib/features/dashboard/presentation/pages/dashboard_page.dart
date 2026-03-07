@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yaanam/core/constant/app_images.dart';
+import 'package:yaanam/core/presentation/widgets/adaptive_status_bar.dart';
 import 'package:yaanam/core/theme/app_colors.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -12,201 +13,204 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
+    return AdaptiveStatusBar(
+      color: Theme.of(context).colorScheme.primary,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
                 ),
-              ),
-              child: Column(
-                children: [
-                  // Header Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    child: Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: 25,
-                          backgroundColor: Colors.orange,
-                          child: Text('🧔', style: TextStyle(fontSize: 24)), // Placeholder for avatar
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Hello !',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
-                            ),
-                            Row(
-                              children: [
-                                Text(
-                                  'Ragunath K',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(width: 4),
-                                Icon(Icons.verified, color: Colors.white, size: 18),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        _buildHeaderIcon(Icons.chat_bubble_rounded),
-                        const SizedBox(width: 12),
-                        _buildHeaderIcon(Icons.notifications),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Tabs Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: [
-                        _buildTab('MY TRIP', isSelected: true),
-                        const SizedBox(width: 10),
-                        _buildTab('ORGANISE'),
-                        const SizedBox(width: 10),
-                        _buildTab('ACTIVE'),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Search Bar
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          icon: Icon(Icons.search, color: Colors.grey),
-                          hintText: 'Search',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.transparent),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.transparent, width: 1.5),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.transparent),
-                          ),
-                        ),
-
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-                ],
-              ),
-            ),
-
-            // Trips List
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  // borderRadius: BorderRadius.only(
-                  //   topLeft: Radius.circular(30),
-                  //   topRight: Radius.circular(30),
-                  // ),
-                ),
-                child: ListView(
-                  padding: const EdgeInsets.all(20),
+                child: Column(
                   children: [
-                    _buildTripCard(
-                      title: 'Sky Trail Escape',
-                      bike: '(Royal Enfield)',
-                      status: 'Approval Pending',
-                      statusColor: Colors.red,
-                      days: '3 Days',
-                      start: 'BAN',
-                      startDate: '12-Oct-2025',
-                      end: 'COORG',
-                      endDate: '15-Oct-2025',
+                    // Header Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      child: Row(
+                        children: [
+                          const CircleAvatar(
+                            radius: 25,
+                            backgroundColor: Colors.orange,
+                            child: Text('🧔', style: TextStyle(fontSize: 24)), // Placeholder for avatar
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Hello !',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
+                              ),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Ragunath K',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Icon(Icons.verified, color: Colors.white, size: 18),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          _buildHeaderIcon(Icons.chat_bubble_rounded),
+                          const SizedBox(width: 12),
+                          _buildHeaderIcon(Icons.notifications),
+                        ],
+                      ),
                     ),
-                    _buildTripCard(
-                      title: 'Sky Trail Escape',
-                      bike: '(Royal Enfield)',
-                      status: 'Approval Pending',
-                      statusColor: Colors.orange,
-                      days: '3 Days',
-                      start: 'BAN',
-                      startDate: '12-Oct-2025',
-                      end: 'COORG',
-                      endDate: '15-Oct-2025',
+
+                    const SizedBox(height: 10),
+
+                    // Tabs Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          _buildTab('MY TRIP', isSelected: true),
+                          const SizedBox(width: 10),
+                          _buildTab('ORGANISE'),
+                          const SizedBox(width: 10),
+                          _buildTab('ACTIVE'),
+                        ],
+                      ),
                     ),
-                    _buildTripCard(
-                      title: 'Sky Trail Escape',
-                      bike: '(Royal Enfield)',
-                      status: 'Approved',
-                      statusColor: Colors.green,
-                      days: '3 Days',
-                      start: 'BAN',
-                      startDate: '12-Oct-2025',
-                      end: 'COORG',
-                      endDate: '15-Oct-2025',
+
+                    const SizedBox(height: 10),
+
+                    // Search Bar
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: TextField(
+                          decoration: InputDecoration(
+                            icon: Icon(Icons.search, color: Colors.grey),
+                            hintText: 'Search',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.transparent),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.transparent, width: 1.5),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.transparent),
+                            ),
+                          ),
+
+                        ),
+                      ),
                     ),
-                    _buildTripCard(
-                      title: 'Sky Trail Escape',
-                      bike: '(Royal Enfield)',
-                      status: 'Approval Pending',
-                      statusColor: Colors.red,
-                      days: '12-Oct-2025',
-                      start: 'BAN',
-                      startDate: '',
-                      end: 'COORG',
-                      endDate: '',
-                      showDatesOnly: true,
-                    ),
+
+                    const SizedBox(height: 10),
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: const BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
+
+              // Trips List
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    // borderRadius: BorderRadius.only(
+                    //   topLeft: Radius.circular(30),
+                    //   topRight: Radius.circular(30),
+                    // ),
+                  ),
+                  child: ListView(
+                    padding: const EdgeInsets.all(20),
+                    children: [
+                      _buildTripCard(
+                        title: 'Sky Trail Escape',
+                        bike: '(Royal Enfield)',
+                        status: 'Approval Pending',
+                        statusColor: Colors.red,
+                        days: '3 Days',
+                        start: 'BAN',
+                        startDate: '12-Oct-2025',
+                        end: 'COORG',
+                        endDate: '15-Oct-2025',
+                      ),
+                      _buildTripCard(
+                        title: 'Sky Trail Escape',
+                        bike: '(Royal Enfield)',
+                        status: 'Approval Pending',
+                        statusColor: Colors.orange,
+                        days: '3 Days',
+                        start: 'BAN',
+                        startDate: '12-Oct-2025',
+                        end: 'COORG',
+                        endDate: '15-Oct-2025',
+                      ),
+                      _buildTripCard(
+                        title: 'Sky Trail Escape',
+                        bike: '(Royal Enfield)',
+                        status: 'Approved',
+                        statusColor: Colors.green,
+                        days: '3 Days',
+                        start: 'BAN',
+                        startDate: '12-Oct-2025',
+                        end: 'COORG',
+                        endDate: '15-Oct-2025',
+                      ),
+                      _buildTripCard(
+                        title: 'Sky Trail Escape',
+                        bike: '(Royal Enfield)',
+                        status: 'Approval Pending',
+                        statusColor: Colors.red,
+                        days: '12-Oct-2025',
+                        start: 'BAN',
+                        startDate: '',
+                        end: 'COORG',
+                        endDate: '',
+                        showDatesOnly: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(Icons.home_outlined, 0, isSelected: true),
-            _buildNavItem(Icons.calendar_today_outlined, 1),
-            _buildNavItem(Icons.assignment_outlined, 2),
-            _buildNavItem(Icons.confirmation_number_outlined, 3, isSelected: false),
-            _buildNavItem(Icons.layers_outlined, 4),
-          ],
+        bottomNavigationBar: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: const BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(Icons.home_outlined, 0, isSelected: true),
+              _buildNavItem(Icons.calendar_today_outlined, 1),
+              _buildNavItem(Icons.assignment_outlined, 2),
+              _buildNavItem(Icons.confirmation_number_outlined, 3, isSelected: false),
+              _buildNavItem(Icons.layers_outlined, 4),
+            ],
+          ),
         ),
       ),
     );

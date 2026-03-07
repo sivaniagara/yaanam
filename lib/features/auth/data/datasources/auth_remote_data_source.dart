@@ -1,0 +1,97 @@
+import 'package:dio/dio.dart';
+import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/network/http_service.dart';
+import '../../../../core/error/exceptions.dart';
+import '../models/login_request_model.dart';
+import '../models/login_response_model.dart';
+import '../models/resend_otp_request_model.dart';
+import '../models/resend_otp_response_model.dart';
+import '../models/signup_model.dart';
+import '../models/signup_response_model.dart';
+import '../models/verify_otp_request_model.dart';
+import '../models/verify_otp_response_model.dart';
+
+abstract class AuthRemoteDataSource {
+  Future<SignupResponseModel> signup(SignupModel signupModel);
+  Future<LoginResponseModel> login(LoginRequestModel loginModel);
+  Future<VerifyOtpResponseModel> verifyOtp(VerifyOtpRequestModel verifyOtpModel);
+  Future<ResendOtpResponseModel> resendOtp(ResendOtpRequestModel resendOtpModel);
+}
+
+class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
+  final HttpService httpService;
+
+  AuthRemoteDataSourceImpl({required this.httpService});
+
+  @override
+  Future<SignupResponseModel> signup(SignupModel signupModel) async {
+    try {
+      final response = await httpService.post(
+        ApiEndpoints.signup,
+        data: signupModel.toJson(),
+      );
+      
+      return SignupResponseModel.fromJson(response.data);
+    } on DioException catch (e) {
+      final String message = e.response?.data['message'] ?? 'Signup failed';
+      throw ServerException(message);
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException('Network error occurred');
+    }
+  }
+
+  @override
+  Future<LoginResponseModel> login(LoginRequestModel loginModel) async {
+    try {
+      final response = await httpService.post(
+        ApiEndpoints.login,
+        data: loginModel.toJson(),
+      );
+      
+      return LoginResponseModel.fromJson(response.data);
+    } on DioException catch (e) {
+      final String message = e.response?.data['message'] ?? 'Login failed';
+      throw ServerException(message);
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException('Network error occurred');
+    }
+  }
+
+  @override
+  Future<VerifyOtpResponseModel> verifyOtp(VerifyOtpRequestModel verifyOtpModel) async {
+    try {
+      final response = await httpService.post(
+        ApiEndpoints.verifyOtp,
+        data: verifyOtpModel.toJson(),
+      );
+      
+      return VerifyOtpResponseModel.fromJson(response.data);
+    } on DioException catch (e) {
+      final String message = e.response?.data['message'] ?? 'OTP verification failed';
+      throw ServerException(message);
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException('Network error occurred');
+    }
+  }
+
+  @override
+  Future<ResendOtpResponseModel> resendOtp(ResendOtpRequestModel resendOtpModel) async {
+    try {
+      final response = await httpService.post(
+        ApiEndpoints.resendOtp,
+        data: resendOtpModel.toJson(),
+      );
+      
+      return ResendOtpResponseModel.fromJson(response.data);
+    } on DioException catch (e) {
+      final String message = e.response?.data['message'] ?? 'OTP resend failed';
+      throw ServerException(message);
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException('Network error occurred');
+    }
+  }
+}

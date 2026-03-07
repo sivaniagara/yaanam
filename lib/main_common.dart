@@ -1,17 +1,20 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'app/app.dart';
+import 'core/di/dependency_injection.dart';
 import 'core/environment/app_config.dart';
 import 'core/environment/app_environment.dart';
 import 'core/environment/app_brand.dart';
 import 'core/environment/environment_config.dart';
 import 'core/environment/brand_config.dart';
 import 'core/theme/app_colors.dart';
+import 'firebase_options.dart';
 
 void mainCommon({
   required AppEnvironment environment,
   required AppBrand brand,
-}) {
+}) async{
   envConfig = EnvironmentConfig.fromEnv(environment);
   brandConfig = BrandConfig.fromBrand(brand);
   SystemChrome.setSystemUIOverlayStyle(
@@ -21,5 +24,14 @@ void mainCommon({
       statusBarBrightness: Brightness.dark,
     ),
   );
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Dependency Injection
+  await init();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const MyApp());
 }

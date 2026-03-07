@@ -3,6 +3,9 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  firebase_core
+  geolocator_windows
+  rive_native
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
