@@ -3,43 +3,72 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yaanam/core/constant/app_images.dart';
 import 'package:yaanam/core/di/dependency_injection.dart';
 import 'package:yaanam/core/router/route_names.dart';
 import 'package:yaanam/core/theme/app_colors.dart';
 import 'package:yaanam/features/auth/presentation/bloc/auth_bloc.dart';
 
-import '../../../../core/constant/enums.dart';
-
-class ResetPasswordPage extends StatefulWidget {
-  const ResetPasswordPage({super.key});
+class SetNewPasswordPage extends StatefulWidget {
+  final String otp;
+  const SetNewPasswordPage({super.key, required this.otp});
 
   @override
-  State<ResetPasswordPage> createState() => _ResetPasswordPageState();
+  State<SetNewPasswordPage> createState() => _SetNewPasswordPageState();
 }
 
-class _ResetPasswordPageState extends State<ResetPasswordPage> {
-  final TextEditingController _mobileController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
+class _SetNewPasswordPageState extends State<SetNewPasswordPage> {
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  String? _mobile;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMobile();
+  }
+
+  Future<void> _loadMobile() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _mobile = prefs.getString('mobile');
+    });
+  }
 
   @override
   void dispose() {
-    _mobileController.dispose();
-    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _onSendPressed(BuildContext context) {
-    if (_mobileController.text.isNotEmpty && _emailController.text.isNotEmpty) {
-      context.read<AuthBloc>().add(
-            AuthForgotPasswordRequested(
-              mobile: _mobileController.text,
-              email: _emailController.text,
-            ),
+  void _onUpdatePressed(BuildContext context) {
+    if (_passwordController.text.isNotEmpty && _confirmPasswordController.text.isNotEmpty) {
+      if (_passwordController.text == _confirmPasswordController.text) {
+        if (_mobile != null) {
+          context.read<AuthBloc>().add(
+                AuthUpdatePasswordRequested(
+                  mobile: _mobile!,
+                  otp: widget.otp,
+                  password: _passwordController.text,
+                ),
+              );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User session not found. Please try again.')),
           );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Passwords do not match')),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter both mobile and email')),
+        const SnackBar(content: Text('Please fill all fields')),
       );
     }
   }
@@ -50,15 +79,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       create: (context) => sl<AuthBloc>(),
       child: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          if (state.status == AuthStatus.forgotPasswordSent) {
+          if (state.status == AuthStatus.passwordUpdated) {
             AwesomeDialog(
               context: context,
               dialogType: DialogType.success,
               animType: AnimType.bottomSlide,
               title: 'Success',
-              desc: 'OTP sent successfully',
+              desc: 'Password updated successfully',
               btnOkOnPress: () {
-                context.go(RouteNames.verificationCode, extra: {'mobile': _mobileController.text, 'verificationType': VerificationType.forgotPassword});
+                context.go(RouteNames.signIn);
               },
             ).show();
           } else if (state.status == AuthStatus.error) {
@@ -67,7 +96,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               dialogType: DialogType.error,
               animType: AnimType.bottomSlide,
               title: 'Error',
-              desc: state.errorMessage ?? 'Request failed',
+              desc: state.errorMessage ?? 'Update failed',
               btnOkOnPress: () {},
             ).show();
           }
@@ -143,7 +172,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Reset Password',
+                            'New Password',
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
@@ -152,7 +181,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'Please enter your email and mobile no to\nrequest a password reset',
+                            'Please enter your new password to\naccess your account',
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey,
@@ -160,14 +189,22 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             ),
                           ),
                           const SizedBox(height: 32),
-                          
-                          // Mobile Field
+
+                          // New Password Field
                           TextField(
-                            controller: _mobileController,
-                            keyboardType: TextInputType.phone,
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
                             decoration: InputDecoration(
-                              hintText: 'Mobile Number',
+                              hintText: 'New Password',
                               hintStyle: const TextStyle(color: Color(0xFF5E6D7E)),
+                              prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                              ),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -184,14 +221,22 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                      
-                          // Email Field
+
+                          // Confirm Password Field
                           TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
+                            controller: _confirmPasswordController,
+                            obscureText: _obscureConfirmPassword,
                             decoration: InputDecoration(
-                              hintText: 'E-mail Address',
+                              hintText: 'Confirm Password',
                               hintStyle: const TextStyle(color: Color(0xFF5E6D7E)),
+                              prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                              ),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -208,8 +253,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             ),
                           ),
                           const SizedBox(height: 48),
-                      
-                          // Send Button
+
+                          // Update Button
                           SizedBox(
                             width: double.infinity,
                             height: 56,
@@ -234,7 +279,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                               child: ElevatedButton(
                                 onPressed: state.status == AuthStatus.loading
                                     ? null
-                                    : () => _onSendPressed(context),
+                                    : () => _onUpdatePressed(context),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.transparent,
                                   shadowColor: Colors.transparent,
@@ -245,7 +290,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 child: state.status == AuthStatus.loading
                                     ? const CircularProgressIndicator(color: Colors.white)
                                     : const Text(
-                                        'Send New Password',
+                                        'Update Password',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
@@ -256,7 +301,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                      
+
                           // Return to login
                           Center(
                             child: GestureDetector(

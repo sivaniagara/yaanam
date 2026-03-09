@@ -6,6 +6,7 @@ class RouteNames {
   static const String signIn = '/signIn';
   static const String signUp = '/signUp';
   static const String resetPassword = '/resetPassword';
+  static const String setNewPassword = '/setNewPassword';
   static const String verificationCode = '/verificationCode';
   static const String dashboard = '/dashboard';
   static const String createTrip = '/create-trip';

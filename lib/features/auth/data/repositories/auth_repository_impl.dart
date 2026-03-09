@@ -10,12 +10,18 @@ import '../../domain/entities/signup_entity.dart';
 import '../../domain/entities/signup_response_entity.dart';
 import '../../domain/entities/verify_otp_request_entity.dart';
 import '../../domain/entities/verify_otp_response_entity.dart';
+import '../../domain/entities/forgot_password_request_entity.dart';
+import '../../domain/entities/forgot_password_response_entity.dart';
+import '../../domain/entities/update_password_request_entity.dart';
+import '../../domain/entities/update_password_response_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../models/login_request_model.dart';
 import '../models/resend_otp_request_model.dart';
 import '../models/signup_model.dart';
 import '../models/verify_otp_request_model.dart';
+import '../models/forgot_password_request_model.dart';
+import '../models/update_password_request_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
@@ -108,6 +114,41 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure(e.message));
     } catch (e) {
       return const Left(ServerFailure('OTP resend failed. Please try again later.'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ForgotPasswordResponseEntity>> forgotPassword(ForgotPasswordRequestEntity forgotPasswordEntity) async {
+    try {
+      final forgotPasswordModel = ForgotPasswordRequestModel(
+        mobile: forgotPasswordEntity.mobile,
+        email: forgotPasswordEntity.email,
+      );
+      
+      final result = await remoteDataSource.forgotPassword(forgotPasswordModel);
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return const Left(ServerFailure('Forgot password request failed. Please try again later.'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UpdatePasswordResponseEntity>> updatePassword(UpdatePasswordRequestEntity updatePasswordEntity) async {
+    try {
+      final updatePasswordModel = UpdatePasswordRequestModel(
+        mobile: updatePasswordEntity.mobile,
+        otp: updatePasswordEntity.otp,
+        password: updatePasswordEntity.password,
+      );
+      
+      final result = await remoteDataSource.updatePassword(updatePasswordModel);
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return const Left(ServerFailure('Password update failed. Please try again later.'));
     }
   }
 }

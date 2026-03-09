@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yaanam/core/constant/app_images.dart';
+import 'package:yaanam/core/constant/enums.dart';
 import 'package:yaanam/core/di/dependency_injection.dart';
 import 'package:yaanam/core/router/route_names.dart';
 import 'package:yaanam/core/theme/app_colors.dart';
@@ -12,7 +13,13 @@ import 'package:yaanam/features/auth/presentation/bloc/auth_bloc.dart';
 
 class VerificationCodePage extends StatefulWidget {
   final String targetIdentifier;
-  const VerificationCodePage({super.key, required this.targetIdentifier});
+  final VerificationType verificationType;
+
+  const VerificationCodePage({
+    super.key,
+    required this.targetIdentifier,
+    required this.verificationType,
+  });
 
   @override
   State<VerificationCodePage> createState() => _VerificationCodePageState();
@@ -50,15 +57,20 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
   void _onVerifyPressed(BuildContext context) {
     if (_controller.text.length == 6) {
       if (_userId != null) {
-        context.read<AuthBloc>().add(
-              AuthVerifyOtpRequested(
-                userId: _userId!,
-                otp: _controller.text,
-              ),
-            );
+        if(widget.verificationType == VerificationType.signup){
+          context.read<AuthBloc>().add(
+            AuthVerifyOtpRequested(
+              userId: _userId!,
+              otp: _controller.text,
+            ),
+          );
+        }else{
+          context.go(RouteNames.setNewPassword, extra: _controller.text);
+        }
+
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User session not found. Please try signing up again.')),
+          const SnackBar(content: Text('User session not found. Please try again.')),
         );
       }
     } else {
@@ -90,7 +102,13 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
               title: 'Verified',
               desc: 'OTP verified successfully!',
               btnOkOnPress: () {
-                context.go(RouteNames.signIn);
+                if (widget.verificationType == VerificationType.signup) {
+                  context.go(RouteNames.signIn);
+                } else {
+                  // If forgot password, navigate to set new password screen
+                  // context.go(RouteNames.setNewPassword); 
+                  context.go(RouteNames.signIn); // Fallback for now
+                }
               },
             ).show();
           } else if (state.status == AuthStatus.otpSent) {
@@ -109,7 +127,9 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
               animType: AnimType.bottomSlide,
               title: 'Error',
               desc: state.errorMessage ?? 'Action failed. Please try again.',
-              btnOkOnPress: () {},
+              btnOkOnPress: () {
+                context.pop();
+              },
             ).show();
           }
         },
@@ -155,7 +175,7 @@ class _VerificationCodePageState extends State<VerificationCodePage> {
                       ),
                       child: IconButton(
                         icon: const Icon(Icons.chevron_left, color: Colors.black),
-                        onPressed: () => context.go(RouteNames.signIn),
+                        onPressed: () => context.pop(),
                       ),
                     ),
                   ),

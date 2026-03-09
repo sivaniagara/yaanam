@@ -51,6 +51,34 @@ class AuthResendOtpRequested extends AuthEvent {
   List<Object?> get props => [mobile];
 }
 
+class AuthForgotPasswordRequested extends AuthEvent {
+  final String mobile;
+  final String email;
+
+  const AuthForgotPasswordRequested({
+    required this.mobile,
+    required this.email,
+  });
+
+  @override
+  List<Object?> get props => [mobile, email];
+}
+
+class AuthUpdatePasswordRequested extends AuthEvent {
+  final String mobile;
+  final String otp;
+  final String password;
+
+  const AuthUpdatePasswordRequested({
+    required this.mobile,
+    required this.otp,
+    required this.password,
+  });
+
+  @override
+  List<Object?> get props => [mobile, otp, password];
+}
+
 class AuthSignOutRequested extends AuthEvent {}
 
 class AuthCheckStatusRequested extends AuthEvent {}

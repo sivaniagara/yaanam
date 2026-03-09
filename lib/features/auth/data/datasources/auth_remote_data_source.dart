@@ -10,12 +10,18 @@ import '../models/signup_model.dart';
 import '../models/signup_response_model.dart';
 import '../models/verify_otp_request_model.dart';
 import '../models/verify_otp_response_model.dart';
+import '../models/forgot_password_request_model.dart';
+import '../models/forgot_password_response_model.dart';
+import '../models/update_password_request_model.dart';
+import '../models/update_password_response_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<SignupResponseModel> signup(SignupModel signupModel);
   Future<LoginResponseModel> login(LoginRequestModel loginModel);
   Future<VerifyOtpResponseModel> verifyOtp(VerifyOtpRequestModel verifyOtpModel);
   Future<ResendOtpResponseModel> resendOtp(ResendOtpRequestModel resendOtpModel);
+  Future<ForgotPasswordResponseModel> forgotPassword(ForgotPasswordRequestModel forgotPasswordModel);
+  Future<UpdatePasswordResponseModel> updatePassword(UpdatePasswordRequestModel updatePasswordModel);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -88,6 +94,42 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return ResendOtpResponseModel.fromJson(response.data);
     } on DioException catch (e) {
       final String message = e.response?.data['message'] ?? 'OTP resend failed';
+      throw ServerException(message);
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException('Network error occurred');
+    }
+  }
+
+  @override
+  Future<ForgotPasswordResponseModel> forgotPassword(ForgotPasswordRequestModel forgotPasswordModel) async {
+    try {
+      final response = await httpService.post(
+        ApiEndpoints.forgetPassword,
+        data: forgotPasswordModel.toJson(),
+      );
+      
+      return ForgotPasswordResponseModel.fromJson(response.data);
+    } on DioException catch (e) {
+      final String message = e.response?.data['message'] ?? 'Forgot password request failed';
+      throw ServerException(message);
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException('Network error occurred');
+    }
+  }
+
+  @override
+  Future<UpdatePasswordResponseModel> updatePassword(UpdatePasswordRequestModel updatePasswordModel) async {
+    try {
+      final response = await httpService.post(
+        ApiEndpoints.updatePassword,
+        data: updatePasswordModel.toJson(),
+      );
+      
+      return UpdatePasswordResponseModel.fromJson(response.data);
+    } on DioException catch (e) {
+      final String message = e.response?.data['message'] ?? 'Password update failed';
       throw ServerException(message);
     } catch (e) {
       if (e is ServerException) rethrow;

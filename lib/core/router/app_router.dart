@@ -6,6 +6,7 @@ import 'package:yaanam/core/router/route_names.dart';
 import 'package:yaanam/features/auth/presentation/pages/reset_password_page.dart';
 import 'package:yaanam/features/auth/presentation/pages/signin_page.dart';
 import 'package:yaanam/features/auth/presentation/pages/verification_code_page.dart';
+import 'package:yaanam/features/auth/presentation/pages/set_new_password_page.dart';
 
 import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/dashboard/presentation/pages/create_trip_page.dart';
@@ -13,6 +14,7 @@ import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/dashboard/presentation/pages/trip_tracking_page.dart';
 import '../../features/introduction/presentation/pages/splash_screen.dart';
 import '../../features/introduction/presentation/pages/welcome_screen.dart';
+import '../constant/enums.dart';
 
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
@@ -44,7 +46,7 @@ Widget pageSlider(context, animation, secondaryAnimation, child){
 }
 
 final router = GoRouter(
-  initialLocation: RouteNames.verificationCode,
+  initialLocation: RouteNames.splash,
   debugLogDiagnostics: true,
   routes: [
     GoRoute(
@@ -70,8 +72,21 @@ final router = GoRouter(
     GoRoute(
       path: '/verificationCode',
       builder: (context, state) {
-        final String targetIdentifier = state.extra as String? ?? 'your email/phone';
-        return VerificationCodePage(targetIdentifier: targetIdentifier);
+        final Map<String, dynamic> extra = state.extra as Map<String, dynamic>? ?? {};
+        final String identifier = extra['emailId'] ?? extra['mobile'] ?? 'your email/phone';
+        final VerificationType type = extra['verificationType'] ?? VerificationType.signup;
+        
+        return VerificationCodePage(
+          targetIdentifier: identifier,
+          verificationType: type,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/setNewPassword',
+      builder: (context, state) {
+        final String otp = state.extra as String? ?? '';
+        return SetNewPasswordPage(otp: otp);
       },
     ),
     GoRoute(

@@ -1,13 +1,16 @@
+import 'dart:convert';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yaanam/core/di/dependency_injection.dart';
 import 'package:yaanam/core/theme/app_colors.dart';
 import 'package:yaanam/features/auth/domain/entities/signup_entity.dart';
 import 'package:yaanam/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:yaanam/core/device/device_info_service.dart';
 
+import '../../../../core/constant/enums.dart';
 import '../../../../core/router/route_names.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -79,6 +82,18 @@ class _SignUpPageState extends State<SignUpPage> {
         password: _passwordController.text,
       );
 
+      // Store data locally
+      // final prefs = await SharedPreferences.getInstance();
+      // final signupData = {
+      //   'name': signupEntity.name,
+      //   'dob': signupEntity.dob,
+      //   'mobile': signupEntity.mobile,
+      //   'email': signupEntity.email,
+      //   'interest': signupEntity.interest,
+      //   'password': signupEntity.password,
+      // };
+      // await prefs.setString('temp_signup_data', jsonEncode(signupData));
+
       if (mounted) {
         context.read<AuthBloc>().add(AuthSignupRequested(signupEntity));
       }
@@ -92,7 +107,7 @@ class _SignUpPageState extends State<SignUpPage> {
       child: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state.status == AuthStatus.otpSent) {
-            context.go(RouteNames.verificationCode, extra: _emailController.text);
+            context.go(RouteNames.verificationCode, extra: {'mobile': _mobileController.text, 'verificationType': VerificationType.signup});
           } else if (state.status == AuthStatus.error) {
             AwesomeDialog(
               context: context,
