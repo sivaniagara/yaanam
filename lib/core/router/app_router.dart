@@ -1,19 +1,20 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:yaanam/core/router/route_names.dart';
 import 'package:yaanam/features/auth/presentation/pages/reset_password_page.dart';
 import 'package:yaanam/features/auth/presentation/pages/signin_page.dart';
 import 'package:yaanam/features/auth/presentation/pages/verification_code_page.dart';
 import 'package:yaanam/features/auth/presentation/pages/set_new_password_page.dart';
-
+import 'package:yaanam/features/trip/presentation/pages/add_crew_page.dart';
+import 'package:yaanam/features/trip/presentation/pages/payment_mode_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
-import '../../features/dashboard/presentation/pages/create_trip_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
-import '../../features/dashboard/presentation/pages/trip_tracking_page.dart';
 import '../../features/introduction/presentation/pages/splash_screen.dart';
 import '../../features/introduction/presentation/pages/welcome_screen.dart';
+import '../../features/trip/presentation/pages/create_trip_page.dart';
+import '../../features/trip/presentation/pages/route_map_picker_page.dart';
 import '../constant/enums.dart';
 
 class GoRouterRefreshStream extends ChangeNotifier {
@@ -46,31 +47,31 @@ Widget pageSlider(context, animation, secondaryAnimation, child){
 }
 
 final router = GoRouter(
-  initialLocation: RouteNames.splash,
+  initialLocation: RouteNames.dashboard,
   debugLogDiagnostics: true,
   routes: [
     GoRoute(
-      path: '/',
+      path: RouteNames.splash,
       builder: (context, state) => const SplashScreen(),
     ),
     GoRoute(
-      path: '/welcomeScreen',
+      path: RouteNames.welcome,
       builder: (context, state) => const WelcomeScreen(),
     ),
     GoRoute(
-      path: '/signIn',
+      path: RouteNames.signIn,
       builder: (context, state) => const SignInPage(),
     ),
     GoRoute(
-      path: '/signUp',
+      path: RouteNames.signUp,
       builder: (context, state) => const SignUpPage(),
     ),
     GoRoute(
-      path: '/resetPassword',
+      path: RouteNames.resetPassword,
       builder: (context, state) => const ResetPasswordPage(),
     ),
     GoRoute(
-      path: '/verificationCode',
+      path: RouteNames.verificationCode,
       builder: (context, state) {
         final Map<String, dynamic> extra = state.extra as Map<String, dynamic>? ?? {};
         final String identifier = extra['emailId'] ?? extra['mobile'] ?? 'your email/phone';
@@ -83,22 +84,34 @@ final router = GoRouter(
       },
     ),
     GoRoute(
-      path: '/setNewPassword',
+      path: RouteNames.setNewPassword,
       builder: (context, state) {
         final String otp = state.extra as String? ?? '';
         return SetNewPasswordPage(otp: otp);
       },
     ),
     GoRoute(
-      path: '/dashboard',
+      path: RouteNames.dashboard,
       builder: (context, state) => const DashboardPage(),
     ),
     GoRoute(
-      path: '/create-trip',
+      path: RouteNames.createTrip,
       builder: (context, state) => const CreateTripPage(),
     ),
     GoRoute(
-      path: '/trip-tracking',  builder: (context, state) => const TripTrackingPage(),
+      path: RouteNames.addCrew,
+      builder: (context, state) => const AddCrewPage(),
+    ),
+    GoRoute(
+      path: RouteNames.paymentMode,
+      builder: (context, state) => const PaymentModePage(),
+    ),
+    GoRoute(
+      path: RouteNames.routeMapPicker,
+      builder: (context, state) {
+        final Map<String, dynamic> data = state.extra as Map<String, dynamic>? ?? {};
+        return RouteMapPickerPage(fullAddress: data['fullAddress'], initialLocation: data['lat'] == 0 ? null : LatLng(data['lat'], data['lng']),);
+      },
     ),
   ],
 );

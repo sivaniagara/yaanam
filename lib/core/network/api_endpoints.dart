@@ -7,4 +7,5 @@ class ApiEndpoints {
   static const String resendOtp = 'users/resend-otp';
   static const String forgetPassword = 'users/forgot-password';
   static const String updatePassword = 'users/reset-password';
+  static const String createTrip = 'trips/create';
 }

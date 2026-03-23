@@ -35,3 +35,6 @@ void mainCommon({
 
   runApp(const MyApp());
 }
+
+
+// flutter build apk --flavor yaanamDev -t lib/main_yaanam_dev.dart

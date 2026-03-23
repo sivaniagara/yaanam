@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:yaanam/core/constant/app_images.dart';
 import 'package:yaanam/core/presentation/widgets/adaptive_status_bar.dart';
+import 'package:yaanam/core/router/route_names.dart';
 import 'package:yaanam/core/theme/app_colors.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -23,7 +25,7 @@ class _DashboardPageState extends State<DashboardPage> {
               Container(
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.primary,
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(30),
                     bottomRight: Radius.circular(30),
                   ),
@@ -48,7 +50,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 'Hello !',
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
                               ),
-                              Row(
+                              const Row(
                                 children: [
                                   Text(
                                     'Ragunath K',
@@ -101,7 +103,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                         child: TextField(
                           decoration: InputDecoration(
-                            icon: Icon(Icons.search, color: Colors.grey),
+                            icon: const Icon(Icons.search, color: Colors.grey),
                             hintText: 'Search',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -132,10 +134,6 @@ class _DashboardPageState extends State<DashboardPage> {
                   width: double.infinity,
                   decoration: const BoxDecoration(
                     color: Colors.white,
-                    // borderRadius: BorderRadius.only(
-                    //   topLeft: Radius.circular(30),
-                    //   topRight: Radius.circular(30),
-                    // ),
                   ),
                   child: ListView(
                     padding: const EdgeInsets.all(20),
@@ -192,6 +190,12 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
         ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => context.push(RouteNames.createTrip),
+          backgroundColor: AppColors.primary,
+          label: const Text('Create', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         bottomNavigationBar: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: const BoxDecoration(

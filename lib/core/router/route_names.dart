@@ -11,4 +11,7 @@ class RouteNames {
   static const String dashboard = '/dashboard';
   static const String createTrip = '/create-trip';
   static const String tripTracking = '/trip-tracking';
+  static const String addCrew = '/addCrew';
+  static const String paymentMode = '/paymentMode';
+  static const String routeMapPicker = '/routeMapPicker';
 }
