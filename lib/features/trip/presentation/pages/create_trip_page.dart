@@ -48,7 +48,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
   // Selected Data
   String? _selectedRideType;
   String? _selectedVehicle;
-  List<CrewMemberEntity> _crewList = [];
+  CrewEntity? _crewData;
   String? _paymentType;
   final List<RoutePointEntity> _selectedRoutePoints = [];
 
@@ -171,7 +171,6 @@ class _CreateTripPageState extends State<CreateTripPage> {
   }
 
   void _onSubmit(BuildContext context) async {
-    print("_onSubmit completed....");
     final prefs = await SharedPreferences.getInstance();
     final organiserId = prefs.getInt('userId') ?? 0;
 
@@ -183,18 +182,35 @@ class _CreateTripPageState extends State<CreateTripPage> {
       rideType: _selectedRideType ?? 'car',
       vehicleType: _selectedVehicle ?? 'Royal Enfield',
       routeId: context.read<TripBloc>().state.routeResponse?.routeId ?? 0,
+      // source: LocationDetailEntity(
+      //   latitude: _sourceLat,
+      //   longitude: _sourceLng,
+      //   city: _sourceCity,
+      //   state: _sourceState,
+      // ),
       startingPoint: _startingPointController.text,
       sourceCity: _sourceCity,
       sourceState: _sourceState,
+      // destination: LocationDetailEntity(
+      //   latitude: _destLat,
+      //   longitude: _destLng,
+      //   city: _destCity,
+      //   state: _destState,
+      // ),
       endPoint: _endPointController.text,
       destinationCity: _destCity,
       destinationState: _destState,
+      // routeMap: _selectedRoutePoints,
       cost: double.tryParse(_costController.text) ?? 0,
       maxParticipants: int.tryParse(_maxParticipantsController.text) ?? 0,
       maxVehicle: int.tryParse(_maxVehicleController.text) ?? 0,
-      crew: _crewList,
+      crew: _crewData ?? const CrewEntity(
+        servicePerson: CrewMemberEntity(name: '', contact: ''),
+        organiser: CrewMemberEntity(name: '', contact: ''),
+      ),
       mobile: _mobileController.text,
       publishType: _isBroadcast ? 'broadcast' : 'selective',
+      // organiserId: organiserId,
       tripStatus: 'active',
       paymentType: _paymentType ?? 'DebitCard',
     );
@@ -394,9 +410,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildSmallButton('Add Crew', () async {
-                        final result = await context.push(RouteNames.addCrew, extra: _crewList);
-                        if (result != null && result is List<CrewMemberEntity>) {
-                          setState(() => _crewList = result);
+                        final result = await context.push(RouteNames.addCrew, extra: _crewData);
+                        if (result != null && result is CrewEntity) {
+                          setState(() => _crewData = result);
                         }
                       }),
                     ),
@@ -554,21 +570,35 @@ class _CreateTripPageState extends State<CreateTripPage> {
         backgroundColor: Colors.grey.shade100,
         foregroundColor: Colors.black,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.grey.shade300),
+        ),
       ),
-      child: Text(label),
+      child: Text(label, style: const TextStyle(fontSize: 12)),
     );
   }
 
   Widget _buildOutlineButton(String label, {required bool isSelected, required VoidCallback onTap}) {
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        backgroundColor: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
-        side: BorderSide(color: isSelected ? AppColors.primary : Colors.grey.shade300),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 40,
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFCA5049) : Colors.white,
+          border: Border.all(color: const Color(0xFFCA5049)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : const Color(0xFFCA5049),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
-      child: Text(label, style: TextStyle(color: isSelected ? AppColors.primary : Colors.black)),
     );
   }
 }

@@ -119,8 +119,8 @@ final router = GoRouter(
     GoRoute(
       path: RouteNames.addCrew,
       builder: (context, state) {
-        final crew = state.extra as List<CrewMemberEntity>?;
-        return AddCrewPage(initialCrew: crew);
+        final crewData = state.extra as CrewEntity?;
+        return AddCrewPage(initialCrew: crewData);
       },
     ),
     GoRoute(

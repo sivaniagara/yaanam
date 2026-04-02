@@ -27,8 +27,12 @@ class TripModel extends TripEntity {
   });
 
   factory TripModel.fromJson(Map<String, dynamic> json) {
+    // If the data is coming from the create trip response, it might be nested under 'data' 
+    // and use different keys (e.g., 'trip_id' instead of 'id').
+    // We handle the normalization in the data source, but adding resilience here.
+    
     return TripModel(
-      id: json['id'],
+      id: json['id'] ?? json['trip_id'],
       name: json['name'] ?? '',
       startDate: json['start_date'] ?? '',
       endDate: json['end_date'] ?? '',
@@ -36,18 +40,21 @@ class TripModel extends TripEntity {
       rideType: json['ride_type'] ?? '',
       vehicleType: json['vehicle_type'] ?? '',
       routeId: json['route_id'] ?? 0,
-      startingPoint: json['starting_point'] ?? '',
-      sourceCity: json['source_city'] ?? '',
-      sourceState: json['source_state'] ?? '',
-      endPoint: json['end_point'] ?? '',
-      destinationCity: json['destination_city'] ?? '',
-      destinationState: json['destination_state'] ?? '',
+      startingPoint: json['starting_point'] ?? (json['source'] != null ? json['source']['name'] : ''),
+      sourceCity: json['source_city'] ?? (json['source'] != null ? json['source']['city'] : ''),
+      sourceState: json['source_state'] ?? (json['source'] != null ? json['source']['state'] : ''),
+      endPoint: json['end_point'] ?? (json['destination'] != null ? json['destination']['name'] : ''),
+      destinationCity: json['destination_city'] ?? (json['destination'] != null ? json['destination']['city'] : ''),
+      destinationState: json['destination_state'] ?? (json['destination'] != null ? json['destination']['state'] : ''),
       cost: (json['cost'] as num? ?? 0).toDouble(),
       maxParticipants: json['max_participants'] ?? 0,
       maxVehicle: json['max_vehicle'] ?? 0,
-      crew: (json['crew'] as List? ?? [])
-          .map((e) => CrewMemberModel.fromJson(e))
-          .toList(),
+      crew: json['crew'] != null 
+          ? CrewModel.fromJson(json['crew']) 
+          : const CrewModel(
+              servicePerson: CrewMemberModel(name: '', contact: ''),
+              organiser: CrewMemberModel(name: '', contact: ''),
+            ),
       mobile: json['mobile'] ?? '',
       publishType: json['publish_type'] ?? '',
       tripStatus: json['trip_status'] ?? '',
@@ -73,7 +80,7 @@ class TripModel extends TripEntity {
       'cost': cost,
       'max_participants': maxParticipants,
       'max_vehicle': maxVehicle,
-      'crew': crew.map((e) => (e as CrewMemberModel).toJson()).toList(),
+      'crew': (crew as CrewModel).toJson(),
       'mobile': mobile,
       'publish_type': publishType,
       'trip_status': tripStatus,
@@ -82,18 +89,37 @@ class TripModel extends TripEntity {
   }
 }
 
+class CrewModel extends CrewEntity {
+  const CrewModel({
+    required super.servicePerson,
+    required super.organiser,
+  });
+
+  factory CrewModel.fromJson(Map<String, dynamic> json) {
+    return CrewModel(
+      servicePerson: CrewMemberModel.fromJson(json['service_person'] ?? {}),
+      organiser: CrewMemberModel.fromJson(json['organiser'] ?? {}),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'service_person': (servicePerson as CrewMemberModel).toJson(),
+      'organiser': (organiser as CrewMemberModel).toJson(),
+    };
+  }
+}
+
 class CrewMemberModel extends CrewMemberEntity {
   const CrewMemberModel({
     required super.name,
     required super.contact,
-    required super.role,
   });
 
   factory CrewMemberModel.fromJson(Map<String, dynamic> json) {
     return CrewMemberModel(
       name: json['name'] ?? '',
       contact: json['contact'] ?? '',
-      role: json['role'] ?? '',
     );
   }
 
@@ -101,7 +127,57 @@ class CrewMemberModel extends CrewMemberEntity {
     return {
       'name': name,
       'contact': contact,
-      'role': role,
+    };
+  }
+}
+
+class LocationDetailModel extends LocationDetailEntity {
+  const LocationDetailModel({
+    required super.latitude,
+    required super.longitude,
+    required super.city,
+    required super.state,
+  });
+
+  factory LocationDetailModel.fromJson(Map<String, dynamic> json) {
+    return LocationDetailModel(
+      latitude: double.tryParse(json['latitude']?.toString() ?? json['lat']?.toString() ?? '0') ?? 0.0,
+      longitude: double.tryParse(json['longitude']?.toString() ?? json['lng']?.toString() ?? '0') ?? 0.0,
+      city: json['city'] ?? '',
+      state: json['state'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'latitude': latitude,
+      'longitude': longitude,
+      'city': city,
+      'state': state,
+    };
+  }
+}
+
+class RoutePointModel extends RoutePointEntity {
+  const RoutePointModel({
+    required super.latitude,
+    required super.longitude,
+    required super.stopName,
+  });
+
+  factory RoutePointModel.fromJson(Map<String, dynamic> json) {
+    return RoutePointModel(
+      latitude: double.tryParse(json['latitude']?.toString() ?? json['lat']?.toString() ?? '0') ?? 0.0,
+      longitude: double.tryParse(json['longitude']?.toString() ?? json['lng']?.toString() ?? '0') ?? 0.0,
+      stopName: json['stop_name'] ?? json['name'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'latitude': latitude,
+      'longitude': longitude,
+      'stop_name': stopName,
     };
   }
 }

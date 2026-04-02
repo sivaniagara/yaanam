@@ -52,9 +52,16 @@ class TripRepositoryImpl implements TripRepository {
         cost: trip.cost,
         maxParticipants: trip.maxParticipants,
         maxVehicle: trip.maxVehicle,
-        crew: trip.crew.map((e){
-          return CrewMemberModel(name: e.name, contact: e.contact, role: e.role);
-        }).toList(),
+        crew: CrewModel(
+          servicePerson: CrewMemberModel(
+            name: trip.crew.servicePerson.name,
+            contact: trip.crew.servicePerson.contact,
+          ),
+          organiser: CrewMemberModel(
+            name: trip.crew.organiser.name,
+            contact: trip.crew.organiser.contact,
+          ),
+        ),
         mobile: trip.mobile,
         publishType: trip.publishType,
         // organiserId: trip.organiserId,
