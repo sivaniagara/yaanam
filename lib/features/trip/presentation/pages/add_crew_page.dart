@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:yaanam/features/trip/domain/entities/trip_entity.dart';
 
 class AddCrewPage extends StatefulWidget {
-  final CrewEntity? initialCrew;
+  final List<CrewMemberEntity>? initialCrew;
   const AddCrewPage({super.key, this.initialCrew});
 
   @override
@@ -10,43 +10,51 @@ class AddCrewPage extends StatefulWidget {
 }
 
 class _AddCrewPageState extends State<AddCrewPage> {
-  final _serviceNameController = TextEditingController();
-  final _serviceContactController = TextEditingController();
-  final _organiserNameController = TextEditingController();
-  final _organiserContactController = TextEditingController();
+  final List<CrewMemberEntity> _crewList = [];
+  final _nameController = TextEditingController();
+  final _contactController = TextEditingController();
+  final _roleController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
     if (widget.initialCrew != null) {
-      _serviceNameController.text = widget.initialCrew!.servicePerson.name;
-      _serviceContactController.text = widget.initialCrew!.servicePerson.contact;
-      _organiserNameController.text = widget.initialCrew!.organiser.name;
-      _organiserContactController.text = widget.initialCrew!.organiser.contact;
+      _crewList.addAll(widget.initialCrew!);
     }
   }
 
   @override
   void dispose() {
-    _serviceNameController.dispose();
-    _serviceContactController.dispose();
-    _organiserNameController.dispose();
-    _organiserContactController.dispose();
+    _nameController.dispose();
+    _contactController.dispose();
+    _roleController.dispose();
     super.dispose();
   }
 
+  void _addCrewMember() {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _crewList.add(CrewMemberEntity(
+          role: _roleController.text.trim(),
+          name: _nameController.text.trim(),
+          contact: _contactController.text.trim(),
+        ));
+        _roleController.clear();
+        _nameController.clear();
+        _contactController.clear();
+      });
+    }
+  }
+
+  void _removeCrewMember(int index) {
+    setState(() {
+      _crewList.removeAt(index);
+    });
+  }
+
   void _onSubmit() {
-    final crew = CrewEntity(
-      servicePerson: CrewMemberEntity(
-        name: _serviceNameController.text,
-        contact: _serviceContactController.text,
-      ),
-      organiser: CrewMemberEntity(
-        name: _organiserNameController.text,
-        contact: _organiserContactController.text,
-      ),
-    );
-    Navigator.of(context).pop(crew);
+    Navigator.of(context).pop(_crewList);
   }
 
   @override
@@ -82,34 +90,103 @@ class _AddCrewPageState extends State<AddCrewPage> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          children: [
-            // const SizedBox(height: 10),
-            // Row(
-            //   children: [
-            //     _buildTab('MY TRIP', isSelected: false),
-            //     const SizedBox(width: 8),
-            //     _buildTab('ORGANISE', isSelected: true),
-            //     const SizedBox(width: 8),
-            //     _buildTab('ACTIVE', isSelected: false),
-            //   ],
-            // ),
-            const SizedBox(height: 30),
-            _buildSectionHeader('Service Person'),
-            const SizedBox(height: 15),
-            _buildTextField(label: 'Name', controller: _serviceNameController, isRequired: true),
-            const SizedBox(height: 12),
-            _buildTextField(label: 'Contact', controller: _serviceContactController, isRequired: true, keyboardType: TextInputType.phone),
-            const SizedBox(height: 30),
-            _buildSectionHeader('Trip Organiser'),
-            const SizedBox(height: 15),
-            _buildTextField(label: 'Name', controller: _organiserNameController, isRequired: true),
-            const SizedBox(height: 12),
-            _buildTextField(label: 'Contact', controller: _organiserContactController, isRequired: true, keyboardType: TextInputType.phone),
-            const SizedBox(height: 50),
-            SizedBox(
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        _buildTextField(
+                          label: 'Role',
+                          hintText: 'e.g., Mechanic, Organizer, Medical',
+                          controller: _roleController,
+                          isRequired: true,
+                          validator: (value) => value == null || value.trim().isEmpty ? 'Please enter a role' : null,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildTextField(
+                          label: 'Name',
+                          controller: _nameController,
+                          isRequired: true,
+                          validator: (value) => value == null || value.trim().isEmpty ? 'Please enter a name' : null,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildTextField(
+                          label: 'Contact',
+                          controller: _contactController,
+                          isRequired: true,
+                          keyboardType: TextInputType.phone,
+                          validator: (value) => value == null || value.trim().isEmpty ? 'Please enter a contact' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton.icon(
+                            onPressed: _addCrewMember,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFCA5049),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            icon: const Icon(Icons.add),
+                            label: const Text('Add to List'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Crew Members',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _crewList.isEmpty
+                      ? const Center(child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20.0),
+                        child: Text('No crew members added yet', style: TextStyle(color: Colors.grey)),
+                      ))
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _crewList.length,
+                          itemBuilder: (context, index) {
+                            final member = _crewList[index];
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: const Color(0xFFCA5049).withOpacity(0.1),
+                                  child: const Icon(Icons.person, color: Color(0xFFCA5049)),
+                                ),
+                                title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: Text('${member.role} • ${member.contact}'),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                  onPressed: () => _removeCrewMember(index),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 30.0),
+            child: SizedBox(
               width: 250,
               height: 50,
               child: Container(
@@ -130,82 +207,52 @@ class _AddCrewPageState extends State<AddCrewPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 40),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Row(
-      children: [
-        const CircleAvatar(
-          radius: 18,
-          backgroundColor: Color(0xFFCA5049),
-          child: Icon(Icons.person, color: Colors.white, size: 20),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF333333),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTab(String label, {bool isSelected = false}) {
-    return Expanded(
-      child: Container(
-        height: 35,
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFCA5049) : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFCA5049).withOpacity(0.5)),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black54,
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({required String label, required TextEditingController controller, bool isRequired = false, TextInputType? keyboardType}) {
+  Widget _buildTextField({
+    required String label,
+    String? hintText,
+    required TextEditingController controller,
+    bool isRequired = false,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 4),
-        SizedBox(
-          height: 45,
-          child: TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            decoration: InputDecoration(
-              labelText: isRequired ? '$label*' : label,
-              labelStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-              floatingLabelBehavior: FloatingLabelBehavior.never,
-              hintText: isRequired ? '$label*' : label,
-              hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.blueGrey.shade100),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: Color(0xFFCA5049)),
-              ),
+        Text.rich(
+          TextSpan(
+            text: label,
+            style: const TextStyle(color: Color(0xFF5E6D7E), fontSize: 14),
+            children: [
+              if (isRequired) const TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          validator: validator,
+          decoration: InputDecoration(
+            hintText: hintText ?? 'Enter $label',
+            hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFD1D9E0)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFD1D9E0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFCA5049)),
             ),
           ),
         ),

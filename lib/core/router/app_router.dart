@@ -8,6 +8,7 @@ import 'package:yaanam/features/auth/presentation/pages/reset_password_page.dart
 import 'package:yaanam/features/auth/presentation/pages/signin_page.dart';
 import 'package:yaanam/features/auth/presentation/pages/verification_code_page.dart';
 import 'package:yaanam/features/auth/presentation/pages/set_new_password_page.dart';
+import 'package:yaanam/features/trip/domain/entities/trip_entity.dart';
 import 'package:yaanam/features/trip/domain/entities/view_routes_entity.dart';
 import 'package:yaanam/features/trip/presentation/bloc/trip_bloc.dart';
 import 'package:yaanam/features/trip/presentation/pages/add_crew_page.dart';
@@ -117,7 +118,10 @@ final router = GoRouter(
     ),
     GoRoute(
       path: RouteNames.addCrew,
-      builder: (context, state) => const AddCrewPage(),
+      builder: (context, state) {
+        final crew = state.extra as List<CrewMemberEntity>?;
+        return AddCrewPage(initialCrew: crew);
+      },
     ),
     GoRoute(
       path: RouteNames.paymentMode,

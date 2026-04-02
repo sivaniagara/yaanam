@@ -18,6 +18,7 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
   @override
   Future<TripModel> createTrip(TripModel tripModel) async {
     try {
+      print("tripModel.toJson() : ${tripModel.toJson()}");
       final response = await httpService.post(
         ApiEndpoints.createTrip,
         data: tripModel.toJson(),
@@ -28,6 +29,7 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
       throw ServerException(message);
     } catch (e) {
       if (e is ServerException) rethrow;
+      print("e : $e");
       throw ServerException('Network error occurred');
     }
   }

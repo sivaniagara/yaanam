@@ -48,7 +48,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
   // Selected Data
   String? _selectedRideType;
   String? _selectedVehicle;
-  CrewEntity? _crewData;
+  List<CrewMemberEntity> _crewList = [];
   String? _paymentType;
   final List<RoutePointEntity> _selectedRoutePoints = [];
 
@@ -60,6 +60,15 @@ class _CreateTripPageState extends State<CreateTripPage> {
     super.initState();
     _sourceController.text = _sourceName;
     _destinationController.text = _destName;
+    _nameController.text = 'summer trip';
+    _startDateController.text = '2026-04-14';
+    _endDateController.text = '2026-04-15';
+    _lastDateToJoinController.text = '2026-04-10';
+    _selectedRideType = 'bike';
+    _selectedVehicle = 'KTM';
+    _costController.text = '1000';
+    _maxVehicleController.text = '20';
+    _mobileController.text = '8220676342';
   }
 
   @override
@@ -107,6 +116,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
   }
 
   Future<void> _pickLocation(bool isStartingPoint) async {
+    print("_pickLocation calling....");
     final result = await context.push(
         RouteNames.routeMapPicker,
         extra: {
@@ -123,6 +133,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
           _sourceState = result['state'];
           _sourceName = result['fullAddress'];
           _sourceController.text = result['fullAddress'];
+          _startingPointController.text = result['fullAddress'];
         } else {
           _destLat = result['latitude'];
           _destLng = result['longitude'];
@@ -130,8 +141,11 @@ class _CreateTripPageState extends State<CreateTripPage> {
           _destState = result['state'];
           _destName = result['fullAddress'];
           _destinationController.text = result['fullAddress'];
+          _endPointController.text = result['fullAddress'];
         }
       });
+      print("_startingPointController.text => ${_startingPointController.text}");
+      print("_endPointController.text => ${_endPointController.text}");
     }
   }
 
@@ -157,6 +171,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
   }
 
   void _onSubmit(BuildContext context) async {
+    print("_onSubmit completed....");
     final prefs = await SharedPreferences.getInstance();
     final organiserId = prefs.getInt('userId') ?? 0;
 
@@ -167,32 +182,19 @@ class _CreateTripPageState extends State<CreateTripPage> {
       lastDateToJoin: _lastDateToJoinController.text,
       rideType: _selectedRideType ?? 'car',
       vehicleType: _selectedVehicle ?? 'Royal Enfield',
-      routeId: 0,
-      source: LocationDetailEntity(
-        latitude: _sourceLat,
-        longitude: _sourceLng,
-        city: _sourceCity,
-        state: _sourceState,
-      ),
+      routeId: context.read<TripBloc>().state.routeResponse?.routeId ?? 0,
       startingPoint: _startingPointController.text,
-      destination: LocationDetailEntity(
-        latitude: _destLat,
-        longitude: _destLng,
-        city: _destCity,
-        state: _destState,
-      ),
+      sourceCity: _sourceCity,
+      sourceState: _sourceState,
       endPoint: _endPointController.text,
-      routeMap: _selectedRoutePoints,
+      destinationCity: _destCity,
+      destinationState: _destState,
       cost: double.tryParse(_costController.text) ?? 0,
       maxParticipants: int.tryParse(_maxParticipantsController.text) ?? 0,
       maxVehicle: int.tryParse(_maxVehicleController.text) ?? 0,
-      crew: _crewData ?? const CrewEntity(
-        servicePerson: CrewMemberEntity(name: '', contact: ''),
-        organiser: CrewMemberEntity(name: '', contact: ''),
-      ),
+      crew: _crewList,
       mobile: _mobileController.text,
       publishType: _isBroadcast ? 'broadcast' : 'selective',
-      organiserId: organiserId,
       tripStatus: 'active',
       paymentType: _paymentType ?? 'DebitCard',
     );
@@ -392,9 +394,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildSmallButton('Add Crew', () async {
-                        final result = await context.push(RouteNames.addCrew);
-                        if (result != null && result is CrewEntity) {
-                          setState(() => _crewData = result);
+                        final result = await context.push(RouteNames.addCrew, extra: _crewList);
+                        if (result != null && result is List<CrewMemberEntity>) {
+                          setState(() => _crewList = result);
                         }
                       }),
                     ),

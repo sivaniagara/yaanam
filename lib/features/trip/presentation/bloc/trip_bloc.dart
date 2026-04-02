@@ -24,6 +24,7 @@ class TripBloc extends Bloc<TripEvent, TripState> {
     CreateTripSubmitted event,
     Emitter<TripState> emit,
   ) async {
+    print('function called....');
     emit(state.copyWith(status: TripStatus.loading));
 
     final result = await createTripUseCase(event.trip);

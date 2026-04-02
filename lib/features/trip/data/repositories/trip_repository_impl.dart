@@ -24,43 +24,40 @@ class TripRepositoryImpl implements TripRepository {
         rideType: trip.rideType,
         vehicleType: trip.vehicleType,
         routeId: trip.routeId,
-        source: LocationDetailModel(
-          latitude: trip.source.latitude,
-          longitude: trip.source.longitude,
-          city: trip.source.city,
-          state: trip.source.state,
-        ),
+        // source: LocationDetailModel(
+        //   latitude: trip.source.latitude,
+        //   longitude: trip.source.longitude,
+        //   city: trip.source.city,
+        //   state: trip.source.state,
+        // ),
         startingPoint: trip.startingPoint,
-        destination: LocationDetailModel(
-          latitude: trip.destination.latitude,
-          longitude: trip.destination.longitude,
-          city: trip.destination.city,
-          state: trip.destination.state,
-        ),
+        sourceCity: trip.sourceCity,
+        sourceState: trip.sourceState,
+        // destination: LocationDetailModel(
+        //   latitude: trip.destination.latitude,
+        //   longitude: trip.destination.longitude,
+        //   city: trip.destination.city,
+        //   state: trip.destination.state,
+        // ),
         endPoint: trip.endPoint,
-        routeMap: trip.routeMap
-            .map((e) => RoutePointModel(
-                  latitude: e.latitude,
-                  longitude: e.longitude,
-                  stopName: e.stopName,
-                ))
-            .toList(),
+        destinationCity: trip.destinationCity,
+        destinationState: trip.destinationState,
+        // routeMap: trip.routeMap
+        //     .map((e) => RoutePointModel(
+        //           latitude: e.latitude,
+        //           longitude: e.longitude,
+        //           stopName: e.stopName,
+        //         ))
+        //     .toList(),
         cost: trip.cost,
         maxParticipants: trip.maxParticipants,
         maxVehicle: trip.maxVehicle,
-        crew: CrewModel(
-          servicePerson: CrewMemberModel(
-            name: trip.crew.servicePerson.name,
-            contact: trip.crew.servicePerson.contact,
-          ),
-          organiser: CrewMemberModel(
-            name: trip.crew.organiser.name,
-            contact: trip.crew.organiser.contact,
-          ),
-        ),
+        crew: trip.crew.map((e){
+          return CrewMemberModel(name: e.name, contact: e.contact, role: e.role);
+        }).toList(),
         mobile: trip.mobile,
         publishType: trip.publishType,
-        organiserId: trip.organiserId,
+        // organiserId: trip.organiserId,
         tripStatus: trip.tripStatus,
         paymentType: trip.paymentType,
       );

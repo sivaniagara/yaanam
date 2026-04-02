@@ -9,22 +9,23 @@ class TripEntity extends Equatable {
   final String rideType;
   final String vehicleType;
   final int routeId;
-  final LocationDetailEntity source;
+  final String sourceCity;
+  final String sourceState;
   final String startingPoint;
-  final LocationDetailEntity destination;
+  final String destinationCity;
+  final String destinationState;
   final String endPoint;
-  final List<RoutePointEntity> routeMap;
   final double cost;
   final int maxParticipants;
   final int maxVehicle;
-  final CrewEntity crew;
+  final List<CrewMemberEntity> crew;
   final String mobile;
   final String publishType;
-  final int organiserId;
+  // final int organiserId;
   final String tripStatus;
   final String paymentType;
-  final String? createdAt;
-  final String? updatedAt;
+  // final String? createdAt;
+  // final String? updatedAt;
 
   const TripEntity({
     this.id,
@@ -35,22 +36,20 @@ class TripEntity extends Equatable {
     required this.rideType,
     required this.vehicleType,
     required this.routeId,
-    required this.source,
+    required this.sourceCity,
+    required this.sourceState,
     required this.startingPoint,
-    required this.destination,
     required this.endPoint,
-    required this.routeMap,
+    required this.destinationCity,
+    required this.destinationState,
     required this.cost,
     required this.maxParticipants,
     required this.maxVehicle,
     required this.crew,
     required this.mobile,
     required this.publishType,
-    required this.organiserId,
     required this.tripStatus,
     required this.paymentType,
-    this.createdAt,
-    this.updatedAt,
   });
 
   @override
@@ -62,22 +61,20 @@ class TripEntity extends Equatable {
         lastDateToJoin,
         rideType,
         vehicleType,
-        source,
         startingPoint,
-        destination,
+        sourceCity,
+        sourceState,
         endPoint,
-        routeMap,
+        destinationCity,
+        destinationState,
         cost,
         maxParticipants,
         maxVehicle,
         crew,
         mobile,
         publishType,
-        organiserId,
         tripStatus,
         paymentType,
-        createdAt,
-        updatedAt,
       ];
 }
 
@@ -113,28 +110,17 @@ class RoutePointEntity extends Equatable {
   List<Object?> get props => [latitude, longitude, stopName];
 }
 
-class CrewEntity extends Equatable {
-  final CrewMemberEntity servicePerson;
-  final CrewMemberEntity organiser;
-
-  const CrewEntity({
-    required this.servicePerson,
-    required this.organiser,
-  });
-
-  @override
-  List<Object?> get props => [servicePerson, organiser];
-}
-
 class CrewMemberEntity extends Equatable {
   final String name;
   final String contact;
+  final String role;
 
   const CrewMemberEntity({
     required this.name,
     required this.contact,
+    required this.role,
   });
 
   @override
-  List<Object?> get props => [name, contact];
+  List<Object?> get props => [name, contact, role];
 }
