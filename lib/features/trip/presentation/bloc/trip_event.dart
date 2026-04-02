@@ -15,3 +15,12 @@ class CreateTripSubmitted extends TripEvent {
   @override
   List<Object?> get props => [trip];
 }
+
+class ViewRoutesRequested extends TripEvent {
+  final ViewRoutesRequestEntity request;
+
+  const ViewRoutesRequested(this.request);
+
+  @override
+  List<Object?> get props => [request];
+}

@@ -36,10 +36,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         ApiEndpoints.signup,
         data: signupModel.toJson(),
       );
-      
+      print("response signup => ${response.data}");
       return SignupResponseModel.fromJson(response.data);
+      // return SignupResponseModel.fromJson({"success": true, "message": "User registered successfully", "data": {"userId": 31, "otpSent": true}});
     } on DioException catch (e) {
-      final String message = e.response?.data['message'] ?? 'Signup failed';
+      final String message = e.response?.data['error']['message'] ?? 'Signup failed';
       throw ServerException(message);
     } catch (e) {
       if (e is ServerException) rethrow;
@@ -49,6 +50,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<LoginResponseModel> login(LoginRequestModel loginModel) async {
+    print("loginModel.toJson() => ${loginModel.toJson()}");
     try {
       final response = await httpService.post(
         ApiEndpoints.login,

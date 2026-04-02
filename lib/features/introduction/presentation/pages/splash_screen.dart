@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yaanam/core/constant/app_images.dart';
+import 'package:yaanam/core/router/route_names.dart';
 import 'package:yaanam/features/introduction/presentation/widgets/brand_name.dart';
 import 'package:yaanam/features/introduction/presentation/widgets/brand_quotes.dart';
 
@@ -95,11 +97,22 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    _controller.forward().then((_) {
-      if (mounted) {
-        context.go('/welcomeScreen');
+    _controller.forward().then((_) => _checkAuthAndNavigate());
+  }
+
+  Future<void> _checkAuthAndNavigate() async {
+    if (!mounted) return;
+    
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+    
+    if (mounted) {
+      if (token != null && token.isNotEmpty) {
+        context.go(RouteNames.dashboard);
+      } else {
+        context.go(RouteNames.welcome);
       }
-    });
+    }
   }
 
   @override

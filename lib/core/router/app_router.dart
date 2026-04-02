@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:yaanam/core/router/route_names.dart';
@@ -7,8 +8,11 @@ import 'package:yaanam/features/auth/presentation/pages/reset_password_page.dart
 import 'package:yaanam/features/auth/presentation/pages/signin_page.dart';
 import 'package:yaanam/features/auth/presentation/pages/verification_code_page.dart';
 import 'package:yaanam/features/auth/presentation/pages/set_new_password_page.dart';
+import 'package:yaanam/features/trip/domain/entities/view_routes_entity.dart';
+import 'package:yaanam/features/trip/presentation/bloc/trip_bloc.dart';
 import 'package:yaanam/features/trip/presentation/pages/add_crew_page.dart';
 import 'package:yaanam/features/trip/presentation/pages/payment_mode_page.dart';
+import 'package:yaanam/features/trip/presentation/pages/trip_tracking_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/introduction/presentation/pages/splash_screen.dart';
@@ -16,6 +20,7 @@ import '../../features/introduction/presentation/pages/welcome_screen.dart';
 import '../../features/trip/presentation/pages/create_trip_page.dart';
 import '../../features/trip/presentation/pages/route_map_picker_page.dart';
 import '../constant/enums.dart';
+import '../di/dependency_injection.dart';
 
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
@@ -47,7 +52,7 @@ Widget pageSlider(context, animation, secondaryAnimation, child){
 }
 
 final router = GoRouter(
-  initialLocation: RouteNames.dashboard,
+  initialLocation: RouteNames.splash,
   debugLogDiagnostics: true,
   routes: [
     GoRoute(
@@ -96,7 +101,19 @@ final router = GoRouter(
     ),
     GoRoute(
       path: RouteNames.createTrip,
-      builder: (context, state) => const CreateTripPage(),
+      builder: (context, state) {
+        return BlocProvider(
+          create: (_) => sl<TripBloc>(),
+          child: const CreateTripPage(),
+        );
+      },
+    ),
+    GoRoute(
+      path: RouteNames.tripTracking,
+      builder: (context, state) {
+        final routeResponse = state.extra as ViewRoutesResponseEntity;
+        return TripTrackingPage(routeResponse: routeResponse);
+      },
     ),
     GoRoute(
       path: RouteNames.addCrew,

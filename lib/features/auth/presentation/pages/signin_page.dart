@@ -28,7 +28,7 @@ class _SignInPageState extends State<SignInPage> {
     // TODO: implement initState
     super.initState();
     _mobileController.text = '8220676342';
-    _passwordController.text = 'SivaYaanam@#1999';
+    _passwordController.text = 'Siva@#1999';
   }
 
   @override

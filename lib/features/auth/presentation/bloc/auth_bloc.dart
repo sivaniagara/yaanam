@@ -56,14 +56,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       password: event.password,
     ));
 
-    result.fold(
-      (failure) => emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: failure.message,
-      )),
-      (response) => emit(state.copyWith(
-        status: AuthStatus.authenticated,
-      )),
+    await result.fold(
+      (failure) async {
+        print("failure sign in => ${failure.message}");
+        emit(state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: failure.message,
+        ));
+      },
+      (response) async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', response.token);
+        await prefs.setInt('userId', response.user.id);
+        await prefs.setString('userName', response.user.name);
+        
+        emit(state.copyWith(
+          status: AuthStatus.authenticated,
+        ));
+      },
     );
   }
 
@@ -76,11 +86,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await signupUseCase(event.signupEntity);
     
     await result.fold(
-      (failure) async => emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: failure.message,
-      )),
+      (failure) async {
+        print('failure');
+        emit(state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: failure.message,
+        ));
+      },
       (response) async {
+        print('success');
         final prefs = await SharedPreferences.getInstance();
         await prefs.setInt('userId', response.userId);
         await prefs.setString('mobile', event.signupEntity.mobile);
@@ -104,14 +118,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       otp: event.otp,
     ));
 
-    result.fold(
-      (failure) => emit(state.copyWith(
+    await result.fold(
+      (failure) async => emit(state.copyWith(
         status: AuthStatus.error,
         errorMessage: failure.message,
       )),
-      (response) => emit(state.copyWith(
-        status: AuthStatus.authenticated,
-      )),
+      (response) async {
+        final prefs = await SharedPreferences.getInstance();
+        // Assuming verifyOtp also returns a token if it logs the user in immediately
+        // If it doesn't, you might need to handle this differently
+        emit(state.copyWith(
+          status: AuthStatus.authenticated,
+        ));
+      },
     );
   }
 

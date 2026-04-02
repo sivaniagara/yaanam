@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:yaanam/core/constant/app_images.dart';
 import 'package:yaanam/core/presentation/widgets/adaptive_status_bar.dart';
 import 'package:yaanam/core/router/route_names.dart';
@@ -208,11 +209,11 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(Icons.home_outlined, 0, isSelected: true),
-              _buildNavItem(Icons.calendar_today_outlined, 1),
-              _buildNavItem(Icons.assignment_outlined, 2),
-              _buildNavItem(Icons.confirmation_number_outlined, 3, isSelected: false),
-              _buildNavItem(Icons.layers_outlined, 4),
+              _buildNavItem(HugeIcons.strokeRoundedHome01, 0, isSelected: true),
+              _buildNavItem(HugeIcons.strokeRoundedCalendar01, 1),
+              _buildNavItem(HugeIcons.strokeRoundedAssignments, 2),
+              _buildNavItem(HugeIcons.strokeRoundedArrangeByNumbers19, 3, isSelected: false),
+              _buildNavItem(HugeIcons.strokeRoundedGroupLayers, 4),
             ],
           ),
         ),
@@ -355,11 +356,11 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, int index, {bool isSelected = false}) {
+  Widget _buildNavItem(List<List<dynamic>> icon, int index, {bool isSelected = false}) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: Colors.white.withValues(alpha: isSelected ? 1 : 0.7), size: 28),
+        HugeIcon(icon: icon, color: Colors.white.withValues(alpha: isSelected ? 1 : 0.7), size: 28),
         if (isSelected)
           Container(
             margin: const EdgeInsets.only(top: 4),

@@ -204,6 +204,8 @@ class _RouteMapPickerPageState extends State<RouteMapPickerPage> {
           place.country,
         ];
 
+        print("addressParts : ${addressParts}");
+
         final fullAddress = addressParts
             .where((e) => e != null && e!.isNotEmpty)
             .join(', ');

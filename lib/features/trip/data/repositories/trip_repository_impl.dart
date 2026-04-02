@@ -2,9 +2,11 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/trip_entity.dart';
+import '../../domain/entities/view_routes_entity.dart';
 import '../../domain/repositories/trip_repository.dart';
 import '../datasources/trip_remote_data_source.dart';
 import '../models/trip_model.dart';
+import '../models/view_routes_model.dart';
 
 class TripRepositoryImpl implements TripRepository {
   final TripRemoteDataSource remoteDataSource;
@@ -21,6 +23,7 @@ class TripRepositoryImpl implements TripRepository {
         lastDateToJoin: trip.lastDateToJoin,
         rideType: trip.rideType,
         vehicleType: trip.vehicleType,
+        routeId: trip.routeId,
         source: LocationDetailModel(
           latitude: trip.source.latitude,
           longitude: trip.source.longitude,
@@ -68,6 +71,35 @@ class TripRepositoryImpl implements TripRepository {
       return Left(ServerFailure(e.message));
     } catch (e) {
       return const Left(ServerFailure('An unexpected error occurred while creating the trip'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ViewRoutesResponseEntity>> viewRoutes(ViewRoutesRequestEntity request) async {
+    try {
+      final requestModel = ViewRoutesRequestModel(
+        source: RouteLocationModel(
+          lat: request.source.lat,
+          lng: request.source.lng,
+          city: request.source.city,
+          state: request.source.state,
+          name: request.source.name,
+        ),
+        destination: RouteLocationModel(
+          lat: request.destination.lat,
+          lng: request.destination.lng,
+          city: request.destination.city,
+          state: request.destination.state,
+          name: request.destination.name,
+        ),
+      );
+
+      final result = await remoteDataSource.viewRoutes(requestModel);
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return const Left(ServerFailure('An unexpected error occurred while fetching routes'));
     }
   }
 }

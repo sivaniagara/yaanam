@@ -10,8 +10,8 @@ class SignupResponseModel extends SignupResponseEntity {
   factory SignupResponseModel.fromJson(Map<String, dynamic> json) {
     return SignupResponseModel(
       message: json['message'] ?? '',
-      userId: json['userId'] ?? 0,
-      otpSent: json['otpSent'] ?? false,
+      userId: json['data']['userId'] ?? 0,
+      otpSent: json['data']['otpSent'] ?? false,
     );
   }
 }

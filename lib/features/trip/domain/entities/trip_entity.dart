@@ -8,6 +8,7 @@ class TripEntity extends Equatable {
   final String lastDateToJoin;
   final String rideType;
   final String vehicleType;
+  final int routeId;
   final LocationDetailEntity source;
   final String startingPoint;
   final LocationDetailEntity destination;
@@ -33,6 +34,7 @@ class TripEntity extends Equatable {
     required this.lastDateToJoin,
     required this.rideType,
     required this.vehicleType,
+    required this.routeId,
     required this.source,
     required this.startingPoint,
     required this.destination,

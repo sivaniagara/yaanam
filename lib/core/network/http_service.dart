@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HttpService {
@@ -27,6 +28,7 @@ class HttpService {
           final token = prefs.getString('auth_token');
 
           if (token != null && token.isNotEmpty) {
+            debugPrint('Bearer $token');
             options.headers['Authorization'] = 'Bearer $token';
           }
 

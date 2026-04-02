@@ -11,6 +11,7 @@ import 'package:yaanam/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:yaanam/core/device/device_info_service.dart';
 
 import '../../../../core/constant/enums.dart';
+import '../../../../core/error/error_message.dart';
 import '../../../../core/router/route_names.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -33,6 +34,9 @@ class _SignUpPageState extends State<SignUpPage> {
   
   String _selectedInterest = 'car';
   final List<String> _interests = ["car", "bike", "cycle"];
+
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void initState() {
@@ -60,6 +64,17 @@ class _SignUpPageState extends State<SignUpPage> {
 
   Future<void> _onSignUpPressed(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
+      if (_passwordController.text != _confirmPasswordController.text) {
+        AwesomeDialog(
+          context: context,
+          dialogType: DialogType.error,
+          title: 'Error',
+          desc: 'Passwords do not match',
+          btnOkOnPress: () {},
+        ).show();
+        return;
+      }
+
       final deviceInfo = DeviceInfoService();
       
       final signupEntity = SignupEntity(
@@ -82,18 +97,6 @@ class _SignUpPageState extends State<SignUpPage> {
         password: _passwordController.text,
       );
 
-      // Store data locally
-      // final prefs = await SharedPreferences.getInstance();
-      // final signupData = {
-      //   'name': signupEntity.name,
-      //   'dob': signupEntity.dob,
-      //   'mobile': signupEntity.mobile,
-      //   'email': signupEntity.email,
-      //   'interest': signupEntity.interest,
-      //   'password': signupEntity.password,
-      // };
-      // await prefs.setString('temp_signup_data', jsonEncode(signupData));
-
       if (mounted) {
         context.read<AuthBloc>().add(AuthSignupRequested(signupEntity));
       }
@@ -108,6 +111,8 @@ class _SignUpPageState extends State<SignUpPage> {
         listener: (context, state) {
           if (state.status == AuthStatus.otpSent) {
             context.go(RouteNames.verificationCode, extra: {'mobile': _mobileController.text, 'verificationType': VerificationType.signup});
+          }else if (state.status == AuthStatus.error && state.errorMessage == ErrorMessage.userAlreadyExistSignUp) {
+            context.go(RouteNames.verificationCode, extra: {'mobile': _mobileController.text, 'verificationType': VerificationType.signup});
           } else if (state.status == AuthStatus.error) {
             AwesomeDialog(
               context: context,
@@ -115,7 +120,9 @@ class _SignUpPageState extends State<SignUpPage> {
               animType: AnimType.bottomSlide,
               title: 'Error',
               desc: state.errorMessage ?? 'Signup failed',
-              btnOkOnPress: () {},
+              btnOkOnPress: () {
+                context.go(RouteNames.verificationCode, extra: {'mobile': _mobileController.text, 'verificationType': VerificationType.signup});
+              },
               btnOkColor: Colors.red,
             ).show();
           }
@@ -173,7 +180,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         label: 'Date of Birth',
                         controller: _dobController,
                         isRequired: true,
-                        suffixIcon: Icons.calendar_month_outlined,
+                        suffixIcon: const Icon(Icons.calendar_month_outlined, color: Color(0xFF5E6D7E)),
                         onTap: () async {
                           DateTime? pickedDate = await showDatePicker(
                             context: context,
@@ -193,13 +200,45 @@ class _SignUpPageState extends State<SignUpPage> {
                       const SizedBox(height: 10),
                       _buildDropdownField(label: 'Interest'),
                       const SizedBox(height: 10),
-                      _buildTextField(label: 'Password', controller: _passwordController, isRequired: true, isPassword: true),
+                      _buildTextField(
+                        label: 'Password',
+                        controller: _passwordController,
+                        isRequired: true,
+                        obscureText: _obscurePassword,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            color: const Color(0xFF5E6D7E),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                      ),
                       const SizedBox(height: 10),
-                      _buildTextField(label: 'Confirm Password', controller: _confirmPasswordController, isRequired: true, isPassword: true),
+                      _buildTextField(
+                        label: 'Confirm Password',
+                        controller: _confirmPasswordController,
+                        isRequired: true,
+                        obscureText: _obscureConfirmPassword,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                            color: const Color(0xFF5E6D7E),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirmPassword = !_obscureConfirmPassword;
+                            });
+                          },
+                        ),
+                      ),
                       const SizedBox(height: 10),
                       _buildTextField(
                         label: 'Upload Profile Photo',
-                        suffixIcon: Icons.image_outlined,
+                        suffixIcon: const Icon(Icons.image_outlined, color: Color(0xFF5E6D7E)),
                       ),
                       const SizedBox(height: 30),
                       // Next Button
@@ -286,8 +325,8 @@ class _SignUpPageState extends State<SignUpPage> {
     required String label,
     TextEditingController? controller,
     bool isRequired = false,
-    bool isPassword = false,
-    IconData? suffixIcon,
+    bool obscureText = false,
+    Widget? suffixIcon,
     VoidCallback? onTap,
     TextInputType? keyboardType,
   }) {
@@ -310,14 +349,14 @@ class _SignUpPageState extends State<SignUpPage> {
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
-          obscureText: isPassword,
+          obscureText: obscureText,
           readOnly: onTap != null,
           onTap: onTap,
           keyboardType: keyboardType,
           validator: isRequired ? (value) => value == null || value.isEmpty ? 'Field required' : null : null,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            suffixIcon: suffixIcon != null ? Icon(suffixIcon, color: const Color(0xFF5E6D7E)) : null,
+            suffixIcon: suffixIcon,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Color(0xFFD1D9E0)),
