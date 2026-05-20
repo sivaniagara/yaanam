@@ -10,6 +10,7 @@ class AddCrewPage extends StatefulWidget {
 }
 
 class _AddCrewPageState extends State<AddCrewPage> {
+  final _formKey = GlobalKey<FormState>();
   final _serviceNameController = TextEditingController();
   final _serviceContactController = TextEditingController();
   final _organiserNameController = TextEditingController();
@@ -23,10 +24,6 @@ class _AddCrewPageState extends State<AddCrewPage> {
       _serviceContactController.text = widget.initialCrew!.servicePerson.contact;
       _organiserNameController.text = widget.initialCrew!.organiser.name;
       _organiserContactController.text = widget.initialCrew!.organiser.contact;
-      print(_serviceNameController.text);
-      print(_serviceContactController.text);
-      print(_organiserNameController.text);
-      print(_organiserContactController.text);
     }
   }
 
@@ -39,18 +36,40 @@ class _AddCrewPageState extends State<AddCrewPage> {
     super.dispose();
   }
 
+  String? _validateName(String? value, String fieldName) {
+    if (value == null || value.trim().isEmpty) {
+      return '$fieldName cannot be empty';
+    }
+    return null;
+  }
+
+  String? _validateContact(String? value, String fieldName) {
+    if (value == null || value.trim().isEmpty) {
+      return '$fieldName contact cannot be empty';
+    }
+    if (value.trim().length != 10) {
+      return '$fieldName contact must be 10 digits';
+    }
+    if (!RegExp(r'^[0-9]+$').hasMatch(value.trim())) {
+      return 'Please enter a valid $fieldName contact';
+    }
+    return null;
+  }
+
   void _onSubmit() {
-    final crew = CrewEntity(
-      servicePerson: CrewMemberEntity(
-        name: _serviceNameController.text,
-        contact: _serviceContactController.text,
-      ),
-      organiser: CrewMemberEntity(
-        name: _organiserNameController.text,
-        contact: _organiserContactController.text,
-      ),
-    );
-    Navigator.of(context).pop(crew);
+    if (_formKey.currentState!.validate()) {
+      final crew = CrewEntity(
+        servicePerson: CrewMemberEntity(
+          name: _serviceNameController.text.trim(),
+          contact: _serviceContactController.text.trim(),
+        ),
+        organiser: CrewMemberEntity(
+          name: _organiserNameController.text.trim(),
+          contact: _organiserContactController.text.trim(),
+        ),
+      );
+      Navigator.of(context).pop(crew);
+    }
   }
 
   @override
@@ -88,54 +107,69 @@ class _AddCrewPageState extends State<AddCrewPage> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          children: [
-            // const SizedBox(height: 10),
-            // Row(
-            //   children: [
-            //     _buildTab('MY TRIP', isSelected: false),
-            //     const SizedBox(width: 8),
-            //     _buildTab('ORGANISE', isSelected: true),
-            //     const SizedBox(width: 8),
-            //     _buildTab('ACTIVE', isSelected: false),
-            //   ],
-            // ),
-            const SizedBox(height: 30),
-            _buildSectionHeader('Service Person'),
-            const SizedBox(height: 15),
-            _buildTextField(label: 'Name', controller: _serviceNameController, isRequired: true),
-            const SizedBox(height: 12),
-            _buildTextField(label: 'Contact', controller: _serviceContactController, isRequired: true, keyboardType: TextInputType.phone),
-            const SizedBox(height: 30),
-            _buildSectionHeader('Trip Organiser'),
-            const SizedBox(height: 15),
-            _buildTextField(label: 'Name', controller: _organiserNameController, isRequired: true),
-            const SizedBox(height: 12),
-            _buildTextField(label: 'Contact', controller: _organiserContactController, isRequired: true, keyboardType: TextInputType.phone),
-            const SizedBox(height: 50),
-            SizedBox(
-              width: 250,
-              height: 50,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF8B1D1D), Color(0xFFCA5049)],
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              const SizedBox(height: 30),
+              _buildSectionHeader('Service Person'),
+              const SizedBox(height: 15),
+              _buildTextField(
+                label: 'Name',
+                controller: _serviceNameController,
+                isRequired: true,
+                validator: (value) => _validateName(value, 'Service Person'),
+              ),
+              const SizedBox(height: 12),
+              _buildTextField(
+                label: 'Contact',
+                controller: _serviceContactController,
+                isRequired: true,
+                keyboardType: TextInputType.phone,
+                validator: (value) => _validateContact(value, 'Service Person'),
+              ),
+              const SizedBox(height: 30),
+              _buildSectionHeader('Trip Organiser'),
+              const SizedBox(height: 15),
+              _buildTextField(
+                label: 'Name',
+                controller: _organiserNameController,
+                isRequired: true,
+                validator: (value) => _validateName(value, 'Trip Organiser'),
+              ),
+              const SizedBox(height: 12),
+              _buildTextField(
+                label: 'Contact',
+                controller: _organiserContactController,
+                isRequired: true,
+                keyboardType: TextInputType.phone,
+                validator: (value) => _validateContact(value, 'Trip Organiser'),
+              ),
+              const SizedBox(height: 50),
+              SizedBox(
+                width: 250,
+                height: 50,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF8B1D1D), Color(0xFFCA5049)],
+                    ),
                   ),
-                ),
-                child: ElevatedButton(
-                  onPressed: _onSubmit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                  child: ElevatedButton(
+                    onPressed: _onSubmit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                    ),
+                    child: const Text('Submit', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
-                  child: const Text('Submit', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
-            ),
-            const SizedBox(height: 40),
-          ],
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
@@ -162,54 +196,44 @@ class _AddCrewPageState extends State<AddCrewPage> {
     );
   }
 
-  Widget _buildTab(String label, {bool isSelected = false}) {
-    return Expanded(
-      child: Container(
-        height: 35,
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFCA5049) : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFCA5049).withOpacity(0.5)),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black54,
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({required String label, required TextEditingController controller, bool isRequired = false, TextInputType? keyboardType}) {
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    bool isRequired = false,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 4),
-        SizedBox(
-          height: 45,
-          child: TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            decoration: InputDecoration(
-              labelText: isRequired ? '$label*' : label,
-              labelStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-              floatingLabelBehavior: FloatingLabelBehavior.never,
-              hintText: isRequired ? '$label*' : label,
-              hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.blueGrey.shade100),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: Color(0xFFCA5049)),
-              ),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          validator: validator,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          decoration: InputDecoration(
+            labelText: isRequired ? '$label*' : label,
+            labelStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+            floatingLabelBehavior: FloatingLabelBehavior.never,
+            hintText: isRequired ? '$label*' : label,
+            hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.blueGrey.shade100),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFCA5049)),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.red),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
             ),
           ),
         ),

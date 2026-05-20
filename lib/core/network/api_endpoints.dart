@@ -9,4 +9,5 @@ class ApiEndpoints {
   static const String updatePassword = 'users/reset-password';
   static const String createTrip = 'trips/create';
   static const String viewRoutes = 'routes/route';
+  static const String tripList = 'trips/list';
 }

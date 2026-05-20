@@ -19,6 +19,7 @@ class CreateTripPage extends StatefulWidget {
 }
 
 class _CreateTripPageState extends State<CreateTripPage> {
+  final _formKey = GlobalKey<FormState>();
   bool _othersNotAllowed = false;
   bool _isBroadcast = true;
 
@@ -57,18 +58,18 @@ class _CreateTripPageState extends State<CreateTripPage> {
 
   @override
   void initState() {
-    super.initState();
-    _sourceController.text = _sourceName;
-    _destinationController.text = _destName;
-    _nameController.text = 'summer trip';
-    _startDateController.text = '2026-04-14';
-    _endDateController.text = '2026-04-15';
-    _lastDateToJoinController.text = '2026-04-10';
-    _selectedRideType = 'bike';
-    _selectedVehicle = 'KTM';
-    _costController.text = '1000';
-    _maxVehicleController.text = '20';
-    _mobileController.text = '8220676342';
+    // super.initState();
+    // _sourceController.text = _sourceName;
+    // _destinationController.text = _destName;
+    // _nameController.text = 'summer trip';
+    // _startDateController.text = '2026-04-14';
+    // _endDateController.text = '2026-04-15';
+    // _lastDateToJoinController.text = '2026-04-10';
+    // _selectedRideType = 'bike';
+    // _selectedVehicle = 'KTM';
+    // _costController.text = '1000';
+    // _maxVehicleController.text = '20';
+    // _mobileController.text = '8220676342';
   }
 
   @override
@@ -171,6 +172,45 @@ class _CreateTripPageState extends State<CreateTripPage> {
   }
 
   void _onSubmit(BuildContext context) async {
+    if (!_formKey.currentState!.validate()) {
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.warning,
+        animType: AnimType.bottomSlide,
+        title: 'Validation Error',
+        desc: 'Please fill in all required fields correctly.',
+        btnOkOnPress: () {},
+        btnOkColor: const Color(0xFFCA5049),
+      ).show();
+      return;
+    }
+
+    if (context.read<TripBloc>().state.routeResponse == null) {
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.warning,
+        animType: AnimType.bottomSlide,
+        title: 'Route Map Required',
+        desc: 'Please click on "View Route Map" before submitting the trip.',
+        btnOkOnPress: () {},
+        btnOkColor: const Color(0xFFCA5049),
+      ).show();
+      return;
+    }
+
+    if (_crewData == null) {
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.warning,
+        animType: AnimType.bottomSlide,
+        title: 'Crew Details Required',
+        desc: 'Please add crew details before submitting the trip.',
+        btnOkOnPress: () {},
+        btnOkColor: const Color(0xFFCA5049),
+      ).show();
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final organiserId = prefs.getInt('userId') ?? 0;
 
@@ -182,35 +222,18 @@ class _CreateTripPageState extends State<CreateTripPage> {
       rideType: _selectedRideType ?? 'car',
       vehicleType: _selectedVehicle ?? 'Royal Enfield',
       routeId: context.read<TripBloc>().state.routeResponse?.routeId ?? 0,
-      // source: LocationDetailEntity(
-      //   latitude: _sourceLat,
-      //   longitude: _sourceLng,
-      //   city: _sourceCity,
-      //   state: _sourceState,
-      // ),
       startingPoint: _startingPointController.text,
       sourceCity: _sourceCity,
       sourceState: _sourceState,
-      // destination: LocationDetailEntity(
-      //   latitude: _destLat,
-      //   longitude: _destLng,
-      //   city: _destCity,
-      //   state: _destState,
-      // ),
       endPoint: _endPointController.text,
       destinationCity: _destCity,
       destinationState: _destState,
-      // routeMap: _selectedRoutePoints,
       cost: double.tryParse(_costController.text) ?? 0,
       maxParticipants: int.tryParse(_maxParticipantsController.text) ?? 0,
       maxVehicle: int.tryParse(_maxVehicleController.text) ?? 0,
-      crew: _crewData ?? const CrewEntity(
-        servicePerson: CrewMemberEntity(name: '', contact: ''),
-        organiser: CrewMemberEntity(name: '', contact: ''),
-      ),
+      crew: _crewData!,
       mobile: _mobileController.text,
       publishType: _isBroadcast ? 'broadcast' : 'selective',
-      // organiserId: organiserId,
       tripStatus: 'active',
       paymentType: _paymentType ?? 'DebitCard',
     );
@@ -278,180 +301,222 @@ class _CreateTripPageState extends State<CreateTripPage> {
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                _buildTextField(label: 'Name', controller: _nameController, isRequired: true),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        label: 'Start Date',
-                        controller: _startDateController,
-                        isRequired: true,
-                        suffixIcon: Icons.calendar_month_outlined,
-                        onTap: () => _selectDate(context, _startDateController),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildTextField(
-                        label: 'End Date',
-                        controller: _endDateController,
-                        isRequired: true,
-                        suffixIcon: Icons.calendar_month_outlined,
-                        onTap: () => _selectDate(context, _endDateController),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _buildDropdownField(
-                  label: 'Ride Type',
-                  value: _selectedRideType,
-                  items: _rideTypes,
-                  isRequired: true,
-                  onChanged: (val) => setState(() => _selectedRideType = val),
-                ),
-                const SizedBox(height: 12),
-                _buildDropdownField(
-                  label: 'Vehicle',
-                  value: _selectedVehicle,
-                  items: _vehicles,
-                  isRequired: true,
-                  onChanged: (val) => setState(() => _selectedVehicle = val),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Checkbox(
-                      value: _othersNotAllowed,
-                      activeColor: AppColors.primary,
-                      onChanged: (val) => setState(() => _othersNotAllowed = val!),
-                    ),
-                    const Text('Others not allowed', style: TextStyle(color: Colors.grey, fontSize: 14)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: _buildLocationPicker(
-                    label: 'Source',
-                    value: _sourceController.text.isEmpty ? null : _sourceController.text,
-                    onTap: () => _pickLocation(true),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
+                  _buildTextField(
+                    label: 'Name',
+                    controller: _nameController,
+                    isRequired: true,
+                    validator: (val) => (val == null || val.isEmpty) ? 'Please enter name' : null,
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                          label: 'Start Date',
+                          controller: _startDateController,
+                          isRequired: true,
+                          suffixIcon: Icons.calendar_month_outlined,
+                          onTap: () => _selectDate(context, _startDateController),
+                          validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildTextField(
+                          label: 'End Date',
+                          controller: _endDateController,
+                          isRequired: true,
+                          suffixIcon: Icons.calendar_month_outlined,
+                          onTap: () => _selectDate(context, _endDateController),
+                          validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDropdownField(
+                    label: 'Ride Type',
+                    value: _selectedRideType,
+                    items: _rideTypes,
+                    isRequired: true,
+                    onChanged: (val) => setState(() => _selectedRideType = val),
+                    validator: (val) => val == null ? 'Please select ride type' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDropdownField(
+                    label: 'Vehicle',
+                    value: _selectedVehicle,
+                    items: _vehicles,
+                    isRequired: true,
+                    onChanged: (val) => setState(() => _selectedVehicle = val),
+                    validator: (val) => val == null ? 'Please select vehicle' : null,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _othersNotAllowed,
+                        activeColor: AppColors.primary,
+                        onChanged: (val) => setState(() => _othersNotAllowed = val!),
+                      ),
+                      const Text('Others not allowed', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: _buildLocationPicker(
+                      label: 'Source',
+                      value: _sourceController.text.isEmpty ? null : _sourceController.text,
+                      onTap: () => _pickLocation(true),
+                    ),
+                  ),
 
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: _buildLocationPicker(
-                    label: 'Destination',
-                    value: _destinationController.text.isEmpty ? null : _destinationController.text,
-                    onTap: () => _pickLocation(false),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: _buildLocationPicker(
+                      label: 'Destination',
+                      value: _destinationController.text.isEmpty ? null : _destinationController.text,
+                      onTap: () => _pickLocation(false),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                SizedBox(
-                  width: double.infinity,
-                  height: 45,
-                  child: ElevatedButton(
-                    onPressed: state.status == TripStatus.loading ? null : _onViewRouteMap,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFCA5049),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: state.status == TripStatus.loading && state.routeResponse == null
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('View Route Map', style: TextStyle(color: Colors.white, fontSize: 16)),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Color(0xFFCA5049),
-                    child: Icon(Icons.chat_bubble, color: Colors.white, size: 18),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                Row(
-                  children: [
-                    Expanded(child: _buildTextField(label: 'Cost', controller: _costController, isRequired: true, keyboardType: TextInputType.number)),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildTextField(label: 'Max Participants', controller: _maxParticipantsController, isRequired: true, keyboardType: TextInputType.number)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _buildTextField(
-                  label: 'Last Date to Join',
-                  controller: _lastDateToJoinController,
-                  suffixIcon: Icons.calendar_month_outlined,
-                  onTap: () => _selectDate(context, _lastDateToJoinController),
-                ),
-                const SizedBox(height: 12),
-                _buildTextField(label: 'Max Vehicle', controller: _maxVehicleController, isRequired: true, keyboardType: TextInputType.number),
-                const SizedBox(height: 12),
-                _buildTextField(label: 'Mobile No (Trip Organizer)', controller: _mobileController, isRequired: true, keyboardType: TextInputType.phone),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildSmallButton('Payment Mode', () async {
-                        final result = await context.push(RouteNames.paymentMode);
-                        if (result != null && result is String) {
-                          setState(() => _paymentType = result);
-                        }
-                      }),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildSmallButton('Add Crew', () async {
-                        final result = await context.push(RouteNames.addCrew, extra: _crewData);
-                        if (result != null && result is CrewEntity) {
-                          setState(() => _crewData = result);
-                        }
-                      }),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(child: _buildOutlineButton('Broadcast', isSelected: _isBroadcast, onTap: () => setState(() => _isBroadcast = true))),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildOutlineButton('Selective', isSelected: !_isBroadcast, onTap: () => setState(() => _isBroadcast = false))),
-                  ],
-                ),
-                const SizedBox(height: 30),
-                SizedBox(
-                  width: 200,
-                  height: 45,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(22),
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF8B1D1D), Color(0xFFCA5049)],
-                      ),
-                    ),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 45,
                     child: ElevatedButton(
-                      onPressed: state.status == TripStatus.loading ? null : () => _onSubmit(context),
+                      onPressed: state.status == TripStatus.loading ? null : _onViewRouteMap,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                        backgroundColor: const Color(0xFFCA5049),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: state.status == TripStatus.loading
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text('Submit', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                      child: state.status == TripStatus.loading && state.routeResponse == null
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('View Route Map', style: TextStyle(color: Colors.white, fontSize: 16)),
                     ),
                   ),
-                ),
-                const SizedBox(height: 40),
-              ],
+                  const SizedBox(height: 15),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Color(0xFFCA5049),
+                      child: Icon(Icons.chat_bubble, color: Colors.white, size: 18),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                          label: 'Cost',
+                          controller: _costController,
+                          isRequired: true,
+                          keyboardType: TextInputType.number,
+                          validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildTextField(
+                          label: 'Max Participants',
+                          controller: _maxParticipantsController,
+                          isRequired: true,
+                          keyboardType: TextInputType.number,
+                          validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _buildTextField(
+                    label: 'Last Date to Join',
+                    controller: _lastDateToJoinController,
+                    isRequired: true,
+                    suffixIcon: Icons.calendar_month_outlined,
+                    onTap: () => _selectDate(context, _lastDateToJoinController),
+                    validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildTextField(
+                    label: 'Max Vehicle',
+                    controller: _maxVehicleController,
+                    isRequired: true,
+                    keyboardType: TextInputType.number,
+                    validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildTextField(
+                    label: 'Mobile No (Trip Organizer)',
+                    controller: _mobileController,
+                    isRequired: true,
+                    keyboardType: TextInputType.phone,
+                    validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildSmallButton('Payment Mode', () async {
+                          final result = await context.push(RouteNames.paymentMode);
+                          if (result != null && result is String) {
+                            setState(() => _paymentType = result);
+                          }
+                        }),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildSmallButton('Add Crew', () async {
+                          final result = await context.push(RouteNames.addCrew, extra: _crewData);
+                          if (result != null && result is CrewEntity) {
+                            setState(() => _crewData = result);
+                          }
+                        }),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(child: _buildOutlineButton('Broadcast', isSelected: _isBroadcast, onTap: () => setState(() => _isBroadcast = true))),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildOutlineButton('Selective', isSelected: !_isBroadcast, onTap: () => setState(() => _isBroadcast = false))),
+                    ],
+                  ),
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: 200,
+                    height: 45,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(22),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF8B1D1D), Color(0xFFCA5049)],
+                        ),
+                      ),
+                      child: ElevatedButton(
+                        onPressed: state.status == TripStatus.loading ? null : () => _onSubmit(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                        ),
+                        child: state.status == TripStatus.loading
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text('Submit', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
           ),
         );
@@ -466,6 +531,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
     IconData? suffixIcon,
     VoidCallback? onTap,
     TextInputType? keyboardType,
+    String? Function(String?)? validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -485,11 +551,15 @@ class _CreateTripPageState extends State<CreateTripPage> {
           readOnly: onTap != null,
           onTap: onTap,
           keyboardType: keyboardType,
+          validator: validator,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             suffixIcon: suffixIcon != null ? Icon(suffixIcon, color: const Color(0xFF5E6D7E)) : null,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD1D9E0))),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD1D9E0))),
+            errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red)),
+            focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 2)),
           ),
         ),
       ],
@@ -502,6 +572,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
     required List<String> items,
     bool isRequired = false,
     required Function(String?) onChanged,
+    String? Function(String?)? validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,10 +591,14 @@ class _CreateTripPageState extends State<CreateTripPage> {
           value: value,
           items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
           onChanged: onChanged,
+          validator: validator,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD1D9E0))),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD1D9E0))),
+            errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red)),
+            focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 2)),
           ),
         ),
       ],

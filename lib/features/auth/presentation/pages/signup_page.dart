@@ -41,11 +41,11 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   void initState() {
     super.initState();
-    _nameController.text = 'siva prakash';
-    _displayNameController.text = 'siva';
+    _nameController.text = 'venkatesh';
+    _displayNameController.text = 'venky';
     _dobController.text = '1999-06-21';
-    _mobileController.text = '8220676342';
-    _emailController.text = 'sivamuthuraj1999@gmail.com';
+    _mobileController.text = '9123590805';
+    _emailController.text = 'venkatesh@gmail.com';
     _passwordController.text = 'SivaYaanam@#1999';
     _confirmPasswordController.text = 'SivaYaanam@#1999';
   }

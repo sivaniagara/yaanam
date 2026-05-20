@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yaanam/core/constant/app_images.dart';
 import 'package:yaanam/core/presentation/widgets/adaptive_status_bar.dart';
 import 'package:yaanam/core/router/route_names.dart';
@@ -14,6 +15,21 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  String _userName = 'User';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('userName') ?? 'User';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return AdaptiveStatusBar(
@@ -51,18 +67,18 @@ class _DashboardPageState extends State<DashboardPage> {
                                 'Hello !',
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
                               ),
-                              const Row(
+                              Row(
                                 children: [
                                   Text(
-                                    'Ragunath K',
-                                    style: TextStyle(
+                                    _userName,
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  SizedBox(width: 4),
-                                  Icon(Icons.verified, color: Colors.white, size: 18),
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.verified, color: Colors.white, size: 18),
                                 ],
                               ),
                             ],
