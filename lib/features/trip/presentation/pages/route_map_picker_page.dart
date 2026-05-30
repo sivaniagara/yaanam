@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:yaanam/core/theme/app_colors.dart';
+import 'package:google_places_flutter/google_places_flutter.dart';
+
+const String kGoogleApiKey = "AIzaSyA6xsymZl7I6k6Xl56Si1XxADg2qAccUkQ";
 
 class RouteMapPickerPage extends StatefulWidget {
   final LatLng? initialLocation;
@@ -27,59 +29,10 @@ class _RouteMapPickerPageState extends State<RouteMapPickerPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
-  List<LocationSuggestion> _suggestions = [];
-  bool _isSearching = false;
-
-  String _joinAddressParts(List<String?> parts) {
-    final seen = <String>{};
-    final normalizedParts = <String>[];
-
-    for (final part in parts) {
-      final value = part?.trim();
-      if (value == null || value.isEmpty) continue;
-
-      final key = value.toLowerCase();
-      if (seen.add(key)) {
-        normalizedParts.add(value);
-      }
-    }
-
-    return normalizedParts.join(', ');
-  }
-
-  LocationSuggestion _buildSuggestion(Location location, Placemark place) {
-    final title = _joinAddressParts([
-      place.name,
-      place.street,
-      place.thoroughfare,
-      place.subThoroughfare,
-    ]);
-
-    final subtitle = _joinAddressParts([
-      place.subLocality,
-      place.locality,
-      place.subAdministrativeArea,
-      place.administrativeArea,
-      place.postalCode,
-      place.country,
-    ]);
-
-    final fullAddress = _joinAddressParts([
-      title,
-      subtitle,
-    ]);
-
-    return LocationSuggestion(
-      latLng: LatLng(location.latitude, location.longitude),
-      title: title.isNotEmpty ? title : subtitle,
-      subtitle: title.isNotEmpty ? subtitle : null,
-      description: fullAddress,
-    );
-  }
-
   @override
   void initState() {
     super.initState();
+
     if (widget.initialLocation != null) {
       _selectedLocation = widget.initialLocation;
       _searchController.text = widget.fullAddress;
@@ -94,13 +47,31 @@ class _RouteMapPickerPageState extends State<RouteMapPickerPage> {
     super.dispose();
   }
 
-  void _onMapTap(LatLng position) {
+  // 📍 Map tap
+  void _onMapTap(LatLng position) async {
     setState(() {
       _selectedLocation = position;
       _updateMarker(position);
-      _searchController.clear();
-      _suggestions.clear();
     });
+
+    try {
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+
+        final address = [
+          place.name,
+          place.locality,
+          place.administrativeArea,
+        ].where((e) => e?.isNotEmpty ?? false).join(', ');
+
+        _searchController.text = address;
+      }
+    } catch (_) {}
   }
 
   void _updateMarker(LatLng position) {
@@ -123,63 +94,47 @@ class _RouteMapPickerPageState extends State<RouteMapPickerPage> {
     );
   }
 
-  // 🔥 FIXED SEARCH
-  Future<void> _searchPlaces(String query) async {
-    if (query.length < 2) {
-      setState(() {
-        _suggestions.clear();
-        _isSearching = false;
-      });
-      return;
-    }
+  // 🔥 Select place
+  void _onPlaceSelected(dynamic prediction) {
+    final lat = double.tryParse(prediction.lat ?? "0") ?? 0;
+    final lng = double.tryParse(prediction.lng ?? "0") ?? 0;
 
-    setState(() => _isSearching = true);
+    final latLng = LatLng(lat, lng);
 
-    try {
-      List<Location> locations = await locationFromAddress(query);
-
-      // limit results (important)
-      locations = locations.take(5).toList();
-
-      List<LocationSuggestion> temp = [];
-
-      for (var loc in locations) {
-        List<Placemark> placemarks = await placemarkFromCoordinates(
-          loc.latitude,
-          loc.longitude,
-        );
-
-        if (placemarks.isNotEmpty) {
-          temp.add(_buildSuggestion(loc, placemarks.first));
-        }
-      }
-
-      setState(() {
-        _suggestions = temp;
-        _isSearching = false;
-      });
-    } catch (e) {
-      setState(() {
-        _suggestions.clear();
-        _isSearching = false;
-      });
-    }
-  }
-
-  void _selectSuggestion(LocationSuggestion suggestion) {
     setState(() {
-      _selectedLocation = suggestion.latLng;
-      _updateMarker(suggestion.latLng);
-      _searchController.text = suggestion.description;
-      _suggestions.clear();
-      _searchFocusNode.unfocus();
+      _selectedLocation = latLng;
+      _updateMarker(latLng);
+      _searchController.text = prediction.description ?? '';
     });
 
     _mapController?.animateCamera(
-      CameraUpdate.newLatLngZoom(suggestion.latLng, 16),
+      CameraUpdate.newLatLngZoom(latLng, 16),
     );
+
+    // ✅ Keep focus stable
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_searchFocusNode.canRequestFocus) {
+        _searchFocusNode.requestFocus();
+      }
+    });
   }
 
+// ✅ Helper to clean unwanted values (like Plus Codes)
+  String cleanText(String? value) {
+    if (value == null || value.trim().isEmpty) return '';
+
+    final text = value.trim();
+
+    // Detect Plus Codes like "2XPP+VHJ"
+    final plusCodeRegex =
+    RegExp(r'^[23456789CFGHJMPQRVWX]{4,}\+[23456789CFGHJMPQRVWX]{2,}$');
+
+    if (plusCodeRegex.hasMatch(text)) return '';
+
+    return text;
+  }
+
+// ✅ Confirm location
   Future<void> _confirmLocation() async {
     if (_selectedLocation == null) return;
 
@@ -194,37 +149,49 @@ class _RouteMapPickerPageState extends State<RouteMapPickerPage> {
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
 
+        // ✅ Clean and structured address
         final addressParts = [
-          place.name,
-          place.street,
-          place.subLocality,
-          place.locality,
-          place.administrativeArea,
-          place.postalCode,
-          place.country,
+          cleanText(place.name),
+          cleanText(place.street),
+          cleanText(place.subLocality),
+          cleanText(place.locality),
+          cleanText(place.administrativeArea),
+          cleanText(place.postalCode),
+          cleanText(place.country),
         ];
 
-        print("addressParts : ${addressParts}");
-
         final fullAddress = addressParts
-            .where((e) => e != null && e!.isNotEmpty)
+            .where((e) => e.isNotEmpty)
+            .toSet() // ✅ remove duplicates
             .join(', ');
+
+        print("fullAddress : $fullAddress");
+
+        // ✅ Better place name (no plus codes)
+        String placeName = '';
+        if (cleanText(place.locality).isNotEmpty) {
+          placeName = cleanText(place.locality);
+        } else if (cleanText(place.subLocality).isNotEmpty) {
+          placeName = cleanText(place.subLocality);
+        } else if (cleanText(place.street).isNotEmpty) {
+          placeName = cleanText(place.street);
+        }
+
+        final city = cleanText(place.locality).isNotEmpty
+            ? cleanText(place.locality)
+            : cleanText(place.subLocality);
 
         final result = {
           'latitude': _selectedLocation!.latitude,
           'longitude': _selectedLocation!.longitude,
-          'state': place.administrativeArea ?? '',
-          'city': place.locality ?? place.subLocality ?? '',
-          'placeName': place.locality ??
-              place.subLocality ??
-              place.street ??
-              place.name ??
-              '',
+          'state': cleanText(place.administrativeArea),
+          'city': city,
+          'placeName': placeName,
           'fullAddress': fullAddress,
         };
+        print("result : ${result}");
 
         if (mounted) {
-          print("result : $result");
           Navigator.of(context).pop(result);
         }
       }
@@ -259,7 +226,7 @@ class _RouteMapPickerPageState extends State<RouteMapPickerPage> {
             myLocationButtonEnabled: true,
           ),
 
-          // 🔍 SEARCH BAR
+          // 🔥 FIXED SEARCH BAR (NO FOCUS ISSUE)
           Positioned(
             top: 50,
             left: 16,
@@ -269,65 +236,41 @@ class _RouteMapPickerPageState extends State<RouteMapPickerPage> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: TextField(
-                controller: _searchController,
+              child: GooglePlaceAutoCompleteTextField(
+                textEditingController: _searchController,
                 focusNode: _searchFocusNode,
-                onChanged: (value) {
-                  setState(() {});
-                  _searchPlaces(value);
-                },
-                decoration: InputDecoration(
-                  hintText: 'Search place...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                      _suggestions.clear();
-                      setState(() {});
-                    },
-                  )
-                      : null,
+                googleAPIKey: kGoogleApiKey,
+                inputDecoration: const InputDecoration(
+                  hintText: "Search place...",
+                  prefixIcon: Icon(Icons.search),
                   border: InputBorder.none,
                 ),
+                debounceTime: 400,
+                isLatLngRequired: true,
+                textStyle: const TextStyle(color: Colors.black),
+
+                getPlaceDetailWithLatLng: (prediction) {
+                  _onPlaceSelected(prediction);
+                },
+
+                itemClick: (prediction) {
+                  _searchController.text = prediction.description ?? '';
+                  _searchController.selection =
+                      TextSelection.fromPosition(
+                        TextPosition(
+                            offset: _searchController.text.length),
+                      );
+
+                  // ✅ KEEP FOCUS
+                  _searchFocusNode.requestFocus();
+                },
+
+                isCrossBtnShown: false,
+                seperatedBuilder: const Divider(),
+                containerHorizontalPadding: 0,
               ),
             ),
           ),
-
-          // 📍 SUGGESTIONS
-          if (_suggestions.isNotEmpty)
-            Positioned(
-              top: 120,
-              left: 16,
-              right: 16,
-              child: Container(
-                color: Colors.white,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _suggestions.length,
-                  itemBuilder: (_, index) {
-                    final item = _suggestions[index];
-                    return ListTile(
-                      title: Text(
-                        item.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: item.subtitle != null && item.subtitle!.isNotEmpty
-                          ? Text(
-                              item.subtitle!,
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                            )
-                          : null,
-                      isThreeLine: item.subtitle != null && item.subtitle!.isNotEmpty,
-                      onTap: () => _selectSuggestion(item),
-                    );
-                  },
-                ),
-              ),
-            ),
 
           // ✅ CONFIRM BUTTON
           Positioned(
@@ -335,9 +278,8 @@ class _RouteMapPickerPageState extends State<RouteMapPickerPage> {
             left: 16,
             right: 16,
             child: ElevatedButton(
-              onPressed: _selectedLocation != null
-                  ? _confirmLocation
-                  : null,
+              onPressed:
+              _selectedLocation != null ? _confirmLocation : null,
               child: _isLoadingAddress
                   ? const CircularProgressIndicator()
                   : const Text("Confirm Location"),
@@ -347,18 +289,4 @@ class _RouteMapPickerPageState extends State<RouteMapPickerPage> {
       ),
     );
   }
-}
-
-class LocationSuggestion {
-  final LatLng latLng;
-  final String title;
-  final String? subtitle;
-  final String description;
-
-  LocationSuggestion({
-    required this.latLng,
-    required this.title,
-    this.subtitle,
-    required this.description,
-  });
 }
