@@ -14,6 +14,7 @@ import 'package:yaanam/features/trip/presentation/bloc/trip_bloc.dart';
 import 'package:yaanam/features/trip/presentation/pages/add_crew_page.dart';
 import 'package:yaanam/features/trip/presentation/pages/payment_mode_page.dart';
 import 'package:yaanam/features/trip/presentation/pages/trip_tracking_page.dart';
+import 'package:yaanam/features/trip/presentation/pages/route_map_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/introduction/presentation/pages/splash_screen.dart';
@@ -98,7 +99,10 @@ final router = GoRouter(
     ),
     GoRoute(
       path: RouteNames.dashboard,
-      builder: (context, state) => const DashboardPage(),
+      builder: (context, state) => BlocProvider(
+        create: (context) => sl<TripBloc>(),
+        child: const DashboardPage(),
+      ),
     ),
     GoRoute(
       path: RouteNames.createTrip,
@@ -110,10 +114,35 @@ final router = GoRouter(
       },
     ),
     GoRoute(
+      path: RouteNames.editTrip,
+      builder: (context, state) {
+        final trip = state.extra as TripEntity?;
+        return BlocProvider(
+          create: (_) => sl<TripBloc>(),
+          child: CreateTripPage(trip: trip),
+        );
+      },
+    ),
+    GoRoute(
       path: RouteNames.tripTracking,
       builder: (context, state) {
         final routeResponse = state.extra as ViewRoutesResponseEntity;
         return TripTrackingPage(routeResponse: routeResponse);
+      },
+    ),
+    GoRoute(
+      path: RouteNames.routeMap,
+      builder: (context, state) {
+        final Map<String, dynamic> extra = state.extra as Map<String, dynamic>;
+        final TripBloc bloc = extra['bloc'] as TripBloc;
+        return BlocProvider.value(
+          value: bloc,
+          child: RouteMapPage(
+            source: extra['source'] as RouteLocationEntity,
+            destination: extra['destination'] as RouteLocationEntity,
+            initialWaypoints: extra['initialWaypoints'] as List<RouteLocationEntity>?,
+          ),
+        );
       },
     ),
     GoRoute(
@@ -131,7 +160,12 @@ final router = GoRouter(
       path: RouteNames.routeMapPicker,
       builder: (context, state) {
         final Map<String, dynamic> data = state.extra as Map<String, dynamic>? ?? {};
-        return RouteMapPickerPage(fullAddress: data['fullAddress'], initialLocation: data['lat'] == 0 ? null : LatLng(data['lat'], data['lng']),);
+        return RouteMapPickerPage(
+          fullAddress: data['fullAddress'] ?? '',
+          initialLocation: (data['lat'] != null && data['lat'] != 0) ? LatLng(data['lat'], data['lng']) : null,
+          sourceLocation: (data['sourceLat'] != null && data['sourceLat'] != 0) ? LatLng(data['sourceLat'], data['sourceLng']) : null,
+          sourceAddress: data['sourceAddress'],
+        );
       },
     ),
   ],

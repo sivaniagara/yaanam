@@ -1,18 +1,18 @@
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:yaanam/core/environment/app_config.dart';
 import '../../domain/entities/view_routes_entity.dart';
 
 class ViewRoutesRequestModel extends ViewRoutesRequestEntity {
   const ViewRoutesRequestModel({
     required super.source,
     required super.destination,
+    super.waypoints,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'source': (source as RouteLocationModel).toJson(),
       'destination': (destination as RouteLocationModel).toJson(),
+      'waypoints': waypoints?.map((e) => (e as RouteLocationModel).toJson()).toList() ?? [],
     };
   }
 }
@@ -33,17 +33,6 @@ class RouteLocationModel extends RouteLocationEntity {
       city: json['city'] ?? '',
       state: json['state'] ?? '',
       name: json['name'] ?? '',
-    );
-  }
-
-  // Factory method for the server response format
-  factory RouteLocationModel.fromServerJson(Map<String, dynamic> json, {required bool isSource}) {
-    return RouteLocationModel(
-      lat: double.tryParse(json[isSource ? 'source_lat' : 'destination_lat']?.toString() ?? '0') ?? 0,
-      lng: double.tryParse(json[isSource ? 'source_lng' : 'destination_lng']?.toString() ?? '0') ?? 0,
-      city: json[isSource ? 'source_city' : 'destination_city'] ?? '',
-      state: json[isSource ? 'source_state' : 'destination_state'] ?? '',
-      name: json[isSource ? 'source_name' : 'destination_name'] ?? '',
     );
   }
 
@@ -73,14 +62,10 @@ class ViewRoutesResponseModel extends ViewRoutesResponseEntity {
   });
 
   factory ViewRoutesResponseModel.fromJson(Map<String, dynamic> json) {
-    // Extract the nested data object
-    final data = json['data'] ?? json; // Handle both nested and flat structures
-
+    final data = json['data'] ?? json;
     final String polylineStr = data['polyline'] ?? '';
 
-    // Decode polyline - returns List<PointLatLng>
     List<PointLatLng> points = [];
-
     if (polylineStr.isNotEmpty) {
       try {
         points = PolylinePoints.decodePolyline(polylineStr);
@@ -89,7 +74,6 @@ class ViewRoutesResponseModel extends ViewRoutesResponseEntity {
       }
     }
 
-    // Create source and destination from the server's flat structure
     final source = RouteLocationModel(
       lat: double.tryParse(data['source_lat']?.toString() ?? '0') ?? 0,
       lng: double.tryParse(data['source_lng']?.toString() ?? '0') ?? 0,
@@ -106,7 +90,6 @@ class ViewRoutesResponseModel extends ViewRoutesResponseEntity {
       name: data['destination_name'] ?? '',
     );
 
-    // Parse stops if they exist
     List<RouteStopModel> stops = [];
     if (data['stops'] != null && data['stops'] is List) {
       stops = (data['stops'] as List)
@@ -114,11 +97,32 @@ class ViewRoutesResponseModel extends ViewRoutesResponseEntity {
           .toList();
     }
 
+    // Parse waypoints from response or extract intermediate points from stops
+    List<RouteLocationModel> waypointsList = [];
+    if (data['waypoints'] != null && data['waypoints'] is List) {
+      waypointsList = (data['waypoints'] as List)
+          .map((e) => RouteLocationModel.fromJson(e))
+          .toList();
+    } else if (stops.isNotEmpty) {
+      final sortedStops = List<RouteStopModel>.from(stops)..sort((a, b) => a.sequence.compareTo(b.sequence));
+      // Source is usually sequence 0 or first stop, Destination is last
+      // We only want the waypoints in between
+      if (sortedStops.length > 2) {
+        waypointsList = sortedStops.sublist(1, sortedStops.length - 1).map((stop) => RouteLocationModel(
+          lat: stop.lat,
+          lng: stop.lng,
+          city: stop.city,
+          state: stop.state,
+          name: stop.name,
+        )).toList();
+      }
+    }
+
     return ViewRoutesResponseModel(
       routeId: data['route_id'] ?? 0,
       source: source,
       destination: destination,
-      waypoints: [], // No waypoints in your response
+      waypoints: waypointsList,
       polyline: polylineStr,
       polylinePoints: points,
       distance: data['distance'] ?? 0,
@@ -126,13 +130,6 @@ class ViewRoutesResponseModel extends ViewRoutesResponseEntity {
       createdAt: data['created_at'] ?? '',
       stops: stops,
     );
-  }
-
-  // Optional: Add a convenience method to convert to LatLng for Google Maps
-  List<LatLng> get polylineAsLatLng {
-    return polylinePoints
-        .map((point) => LatLng(point.latitude, point.longitude))
-        .toList();
   }
 }
 

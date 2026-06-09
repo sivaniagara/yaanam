@@ -12,7 +12,8 @@ import 'package:yaanam/features/trip/presentation/bloc/trip_bloc.dart';
 import '../../domain/entities/view_routes_entity.dart';
 
 class CreateTripPage extends StatefulWidget {
-  const CreateTripPage({super.key});
+  final TripEntity? trip;
+  const CreateTripPage({super.key, this.trip});
 
   @override
   State<CreateTripPage> createState() => _CreateTripPageState();
@@ -51,25 +52,47 @@ class _CreateTripPageState extends State<CreateTripPage> {
   String? _selectedVehicle;
   CrewEntity? _crewData;
   String? _paymentType;
-  final List<RoutePointEntity> _selectedRoutePoints = [];
+  List<RouteLocationEntity> _waypoints = [];
+  int? _routeId;
 
   final List<String> _rideTypes = ['car', 'bike', 'cycle'];
   final List<String> _vehicles = ['Royal Enfield', 'KTM', 'Yamaha', 'Others'];
 
   @override
   void initState() {
-    // super.initState();
-    // _sourceController.text = _sourceName;
-    // _destinationController.text = _destName;
-    // _nameController.text = 'summer trip';
-    // _startDateController.text = '2026-04-14';
-    // _endDateController.text = '2026-04-15';
-    // _lastDateToJoinController.text = '2026-04-10';
-    // _selectedRideType = 'bike';
-    // _selectedVehicle = 'KTM';
-    // _costController.text = '1000';
-    // _maxVehicleController.text = '20';
-    // _mobileController.text = '8220676342';
+    super.initState();
+    if (widget.trip != null) {
+      final trip = widget.trip!;
+      _nameController.text = trip.name;
+      _startDateController.text = trip.startDate.split('T')[0];
+      _endDateController.text = trip.endDate.split('T')[0];
+      _lastDateToJoinController.text = trip.lastDateToJoin.split('T')[0];
+      _selectedRideType = trip.rideType;
+      _selectedVehicle = trip.vehicleType;
+
+      _sourceController.text = trip.startingPoint;
+      _startingPointController.text = trip.startingPoint;
+      _sourceCity = trip.sourceCity;
+      _sourceState = trip.sourceState;
+      _sourceLat = trip.sourceLat ?? 11.0168;
+      _sourceLng = trip.sourceLng ?? 76.9558;
+
+      _destinationController.text = trip.endPoint;
+      _endPointController.text = trip.endPoint;
+      _destCity = trip.destinationCity;
+      _destState = trip.destinationState;
+      _destLat = trip.destinationLat ?? 11.4064;
+      _destLng = trip.destinationLng ?? 76.6932;
+
+      _costController.text = trip.cost.toString();
+      _maxParticipantsController.text = trip.maxParticipants.toString();
+      _maxVehicleController.text = trip.maxVehicle.toString();
+      _mobileController.text = trip.mobile;
+      _crewData = trip.crew;
+      _paymentType = trip.paymentType;
+      _isBroadcast = trip.publishType.toLowerCase() == 'broadcast';
+      _routeId = trip.routeId;
+    }
   }
 
   @override
@@ -89,9 +112,11 @@ class _CreateTripPageState extends State<CreateTripPage> {
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
+  Future<void> _selectDate(
+      BuildContext context, TextEditingController controller) async {
     DateTime firstDate = DateTime.now();
-    if (controller == _endDateController && _startDateController.text.isNotEmpty) {
+    if (controller == _endDateController &&
+        _startDateController.text.isNotEmpty) {
       DateTime? startDate = DateTime.tryParse(_startDateController.text);
       if (startDate != null) firstDate = startDate;
     }
@@ -106,7 +131,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
     if (pickedDate != null) {
       setState(() {
         controller.text = "${pickedDate.toLocal()}".split(' ')[0];
-        if (controller == _startDateController && _endDateController.text.isNotEmpty) {
+        if (controller == _startDateController &&
+            _endDateController.text.isNotEmpty) {
           DateTime? endDate = DateTime.tryParse(_endDateController.text);
           if (endDate != null && endDate.isBefore(pickedDate)) {
             _endDateController.clear();
@@ -117,14 +143,21 @@ class _CreateTripPageState extends State<CreateTripPage> {
   }
 
   Future<void> _pickLocation(bool isStartingPoint) async {
-    print("_pickLocation calling....");
-    final result = await context.push(
-        RouteNames.routeMapPicker,
-        extra: {
-          "fullAddress": isStartingPoint ? _sourceController.text : _destinationController.text,
-          'lat': isStartingPoint ? _sourceLat : _destLat,
-          'lng': isStartingPoint ? _sourceLng : _destLng
-        });
+    final Map<String, dynamic> extraData = {
+      "fullAddress":
+      isStartingPoint ? _sourceController.text : _destinationController.text,
+      'lat': isStartingPoint ? _sourceLat : _destLat,
+      'lng': isStartingPoint ? _sourceLng : _destLng
+    };
+
+    if (!isStartingPoint && _sourceController.text.isNotEmpty) {
+      extraData['sourceLat'] = _sourceLat;
+      extraData['sourceLng'] = _sourceLng;
+      extraData['sourceAddress'] = _sourceController.text;
+    }
+
+    final result =
+    await context.push(RouteNames.routeMapPicker, extra: extraData);
     if (result != null && result is Map<String, dynamic>) {
       setState(() {
         if (isStartingPoint) {
@@ -145,30 +178,86 @@ class _CreateTripPageState extends State<CreateTripPage> {
           _endPointController.text = result['fullAddress'];
         }
       });
-      print("_startingPointController.text => ${_startingPointController.text}");
-      print("_endPointController.text => ${_endPointController.text}");
     }
   }
 
-  void _onViewRouteMap() {
-    final request = ViewRoutesRequestEntity(
-      source: RouteLocationEntity(
-        lat: _sourceLat,
-        lng: _sourceLng,
-        city: _sourceCity,
-        state: _sourceState,
-        name: _sourceName,
-      ),
-      destination: RouteLocationEntity(
-        lat: _destLat,
-        lng: _destLng,
-        city: _destCity,
-        state: _destState,
-        name: _destName,
-      ),
+  /// Builds the source entity from current local state.
+  RouteLocationEntity get _sourceEntity => RouteLocationEntity(
+    lat: _sourceLat,
+    lng: _sourceLng,
+    city: _sourceCity,
+    state: _sourceState,
+    name: _sourceName,
+  );
+
+  /// Builds the destination entity from current local state.
+  RouteLocationEntity get _destinationEntity => RouteLocationEntity(
+    lat: _destLat,
+    lng: _destLng,
+    city: _destCity,
+    state: _destState,
+    name: _destName,
+  );
+
+  /// Navigates to RouteMapPage and awaits result, then updates local state.
+  Future<void> _navigateToRouteMap() async {
+    final result = await context.push(
+      RouteNames.routeMap,
+      extra: {
+        'source': _sourceEntity,
+        'destination': _destinationEntity,
+        // Always pass the latest local waypoints so the map restores them.
+        'initialWaypoints': List<RouteLocationEntity>.from(_waypoints),
+        'bloc': context.read<TripBloc>(),
+      },
     );
 
-    context.read<TripBloc>().add(ViewRoutesRequested(request));
+    if (result != null && result is Map<String, dynamic>) {
+      setState(() {
+        final source = result['source'] as RouteLocationEntity;
+        final destination = result['destination'] as RouteLocationEntity;
+
+        _sourceLat = source.lat;
+        _sourceLng = source.lng;
+        _sourceCity = source.city;
+        _sourceState = source.state;
+        _sourceName = source.name;
+        _sourceController.text = source.name;
+        _startingPointController.text = source.name;
+
+        _destLat = destination.lat;
+        _destLng = destination.lng;
+        _destCity = destination.city;
+        _destState = destination.state;
+        _destName = destination.name;
+        _destinationController.text = destination.name;
+        _endPointController.text = destination.name;
+
+        _waypoints =
+        List<RouteLocationEntity>.from(result['waypoints'] as List);
+        _routeId = result['routeId'] as int?;
+      });
+    }
+  }
+
+  /// Called when user taps "View Route Map".
+  /// If a route already exists in the bloc, navigate directly.
+  /// Otherwise dispatch a new fetch first — the listener will navigate on success.
+  void _onViewRouteMap() {
+    final blocState = context.read<TripBloc>().state;
+
+    if (blocState.routeResponse != null) {
+      // Route already fetched — go straight to the map with existing data.
+      _navigateToRouteMap();
+    } else {
+      // No route yet — ask the bloc to fetch, the listener will push the page.
+      final request = ViewRoutesRequestEntity(
+        source: _sourceEntity,
+        destination: _destinationEntity,
+        waypoints: List<RouteLocationEntity>.from(_waypoints),
+      );
+      context.read<TripBloc>().add(ViewRoutesRequested(request));
+    }
   }
 
   void _onSubmit(BuildContext context) async {
@@ -185,13 +274,14 @@ class _CreateTripPageState extends State<CreateTripPage> {
       return;
     }
 
-    if (context.read<TripBloc>().state.routeResponse == null) {
+    if (_routeId == null && widget.trip == null) {
       AwesomeDialog(
         context: context,
         dialogType: DialogType.warning,
         animType: AnimType.bottomSlide,
         title: 'Route Map Required',
-        desc: 'Please click on "View Route Map" before submitting the trip.',
+        desc:
+        'Please click on "View Route Map" and form a route before submitting the trip.',
         btnOkOnPress: () {},
         btnOkColor: const Color(0xFFCA5049),
       ).show();
@@ -211,51 +301,62 @@ class _CreateTripPageState extends State<CreateTripPage> {
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final organiserId = prefs.getInt('userId') ?? 0;
-
     final trip = TripEntity(
+      id: widget.trip?.id,
       name: _nameController.text,
       startDate: _startDateController.text,
       endDate: _endDateController.text,
       lastDateToJoin: _lastDateToJoinController.text,
       rideType: _selectedRideType ?? 'car',
       vehicleType: _selectedVehicle ?? 'Royal Enfield',
-      routeId: context.read<TripBloc>().state.routeResponse?.routeId ?? 0,
+      routeId: _routeId ?? 0,
       startingPoint: _startingPointController.text,
+      sourceLat: _sourceLat,
+      sourceLng: _sourceLng,
       sourceCity: _sourceCity,
       sourceState: _sourceState,
       endPoint: _endPointController.text,
+      destinationLat: _destLat,
+      destinationLng: _destLng,
       destinationCity: _destCity,
       destinationState: _destState,
-      cost: double.tryParse(_costController.text) ?? 0,
+      cost: _costController.text,
       maxParticipants: int.tryParse(_maxParticipantsController.text) ?? 0,
       maxVehicle: int.tryParse(_maxVehicleController.text) ?? 0,
       crew: _crewData!,
       mobile: _mobileController.text,
       publishType: _isBroadcast ? 'broadcast' : 'selective',
-      tripStatus: 'active',
+      tripStatus: widget.trip?.tripStatus ?? 'active',
       paymentType: _paymentType ?? 'DebitCard',
     );
 
-    context.read<TripBloc>().add(CreateTripSubmitted(trip));
+    if (widget.trip != null) {
+      context.read<TripBloc>().add(UpdateTripSubmitted(trip));
+    } else {
+      context.read<TripBloc>().add(CreateTripSubmitted(trip));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isEdit = widget.trip != null;
     return BlocConsumer<TripBloc, TripState>(
       listener: (context, state) {
         if (state.status == TripStatus.success) {
           if (state.trip != null) {
+            // Trip created/updated successfully.
             AwesomeDialog(
               context: context,
               dialogType: DialogType.success,
               title: 'Success',
-              desc: 'Trip created successfully!',
+              desc: isEdit
+                  ? 'Trip updated successfully!'
+                  : 'Trip created successfully!',
               btnOkOnPress: () => context.go(RouteNames.dashboard),
             ).show();
           } else if (state.routeResponse != null) {
-            context.push(RouteNames.tripTracking, extra: state.routeResponse);
+            // Route fetched for the first time — navigate to the map.
+            _navigateToRouteMap();
           }
         } else if (state.status == TripStatus.error) {
           AwesomeDialog(
@@ -268,6 +369,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
         }
       },
       builder: (context, state) {
+        // Show a small indicator on the button if a route has already been saved.
+        final hasRoute = _routeId != null || state.routeResponse != null;
+
         return Scaffold(
           backgroundColor: Colors.white,
           appBar: AppBar(
@@ -288,14 +392,16 @@ class _CreateTripPageState extends State<CreateTripPage> {
                   ],
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.chevron_left, color: Colors.black),
+                  icon:
+                  const Icon(Icons.chevron_left, color: Colors.black),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
             ),
-            title: const Text(
-              'Create Trip',
-              style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+            title: Text(
+              isEdit ? 'Edit Trip' : 'Create Trip',
+              style: const TextStyle(
+                  color: Colors.black, fontWeight: FontWeight.bold),
             ),
             centerTitle: true,
           ),
@@ -310,7 +416,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     label: 'Name',
                     controller: _nameController,
                     isRequired: true,
-                    validator: (val) => (val == null || val.isEmpty) ? 'Please enter name' : null,
+                    validator: (val) =>
+                    (val == null || val.isEmpty) ? 'Please enter name' : null,
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -321,8 +428,10 @@ class _CreateTripPageState extends State<CreateTripPage> {
                           controller: _startDateController,
                           isRequired: true,
                           suffixIcon: Icons.calendar_month_outlined,
-                          onTap: () => _selectDate(context, _startDateController),
-                          validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+                          onTap: () =>
+                              _selectDate(context, _startDateController),
+                          validator: (val) =>
+                          (val == null || val.isEmpty) ? 'Required' : null,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -332,8 +441,10 @@ class _CreateTripPageState extends State<CreateTripPage> {
                           controller: _endDateController,
                           isRequired: true,
                           suffixIcon: Icons.calendar_month_outlined,
-                          onTap: () => _selectDate(context, _endDateController),
-                          validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+                          onTap: () =>
+                              _selectDate(context, _endDateController),
+                          validator: (val) =>
+                          (val == null || val.isEmpty) ? 'Required' : null,
                         ),
                       ),
                     ],
@@ -345,7 +456,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     items: _rideTypes,
                     isRequired: true,
                     onChanged: (val) => setState(() => _selectedRideType = val),
-                    validator: (val) => val == null ? 'Please select ride type' : null,
+                    validator: (val) =>
+                    val == null ? 'Please select ride type' : null,
                   ),
                   const SizedBox(height: 12),
                   _buildDropdownField(
@@ -354,7 +466,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     items: _vehicles,
                     isRequired: true,
                     onChanged: (val) => setState(() => _selectedVehicle = val),
-                    validator: (val) => val == null ? 'Please select vehicle' : null,
+                    validator: (val) =>
+                    val == null ? 'Please select vehicle' : null,
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -362,9 +475,12 @@ class _CreateTripPageState extends State<CreateTripPage> {
                       Checkbox(
                         value: _othersNotAllowed,
                         activeColor: AppColors.primary,
-                        onChanged: (val) => setState(() => _othersNotAllowed = val!),
+                        onChanged: (val) =>
+                            setState(() => _othersNotAllowed = val!),
                       ),
-                      const Text('Others not allowed', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                      const Text('Others not allowed',
+                          style:
+                          TextStyle(color: Colors.grey, fontSize: 14)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -372,43 +488,74 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     width: double.infinity,
                     child: _buildLocationPicker(
                       label: 'Source',
-                      value: _sourceController.text.isEmpty ? null : _sourceController.text,
+                      value: _sourceController.text.isEmpty
+                          ? null
+                          : _sourceController.text,
                       onTap: () => _pickLocation(true),
                     ),
                   ),
-
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: _buildLocationPicker(
                       label: 'Destination',
-                      value: _destinationController.text.isEmpty ? null : _destinationController.text,
+                      value: _destinationController.text.isEmpty
+                          ? null
+                          : _destinationController.text,
                       onTap: () => _pickLocation(false),
                     ),
                   ),
+
+                  // Waypoints summary chip row (shown once waypoints exist)
+                  if (_waypoints.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    _buildWaypointsSummary(),
+                  ],
+
                   const SizedBox(height: 20),
 
+                  // View Route Map button — shows a checkmark when route is saved.
                   SizedBox(
                     width: double.infinity,
                     height: 45,
-                    child: ElevatedButton(
-                      onPressed: state.status == TripStatus.loading ? null : _onViewRouteMap,
+                    child: ElevatedButton.icon(
+                      onPressed: state.status == TripStatus.loading
+                          ? null
+                          : _onViewRouteMap,
+                      icon: state.status == TripStatus.loading &&
+                          state.routeResponse == null
+                          ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2),
+                      )
+                          : Icon(
+                        hasRoute ? Icons.map : Icons.map_outlined,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      label: Text(
+                        hasRoute ? 'View / Edit Route Map' : 'View Route Map',
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 16),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFCA5049),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: state.status == TripStatus.loading && state.routeResponse == null
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('View Route Map', style: TextStyle(color: Colors.white, fontSize: 16)),
                     ),
                   ),
+
                   const SizedBox(height: 15),
                   const Align(
                     alignment: Alignment.centerLeft,
                     child: CircleAvatar(
                       radius: 18,
                       backgroundColor: Color(0xFFCA5049),
-                      child: Icon(Icons.chat_bubble, color: Colors.white, size: 18),
+                      child: Icon(Icons.chat_bubble,
+                          color: Colors.white, size: 18),
                     ),
                   ),
                   const SizedBox(height: 15),
@@ -420,7 +567,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                           controller: _costController,
                           isRequired: true,
                           keyboardType: TextInputType.number,
-                          validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+                          validator: (val) =>
+                          (val == null || val.isEmpty) ? 'Required' : null,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -430,7 +578,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                           controller: _maxParticipantsController,
                           isRequired: true,
                           keyboardType: TextInputType.number,
-                          validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+                          validator: (val) =>
+                          (val == null || val.isEmpty) ? 'Required' : null,
                         ),
                       ),
                     ],
@@ -441,8 +590,10 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     controller: _lastDateToJoinController,
                     isRequired: true,
                     suffixIcon: Icons.calendar_month_outlined,
-                    onTap: () => _selectDate(context, _lastDateToJoinController),
-                    validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+                    onTap: () =>
+                        _selectDate(context, _lastDateToJoinController),
+                    validator: (val) =>
+                    (val == null || val.isEmpty) ? 'Required' : null,
                   ),
                   const SizedBox(height: 12),
                   _buildTextField(
@@ -450,7 +601,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     controller: _maxVehicleController,
                     isRequired: true,
                     keyboardType: TextInputType.number,
-                    validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+                    validator: (val) =>
+                    (val == null || val.isEmpty) ? 'Required' : null,
                   ),
                   const SizedBox(height: 12),
                   _buildTextField(
@@ -458,14 +610,16 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     controller: _mobileController,
                     isRequired: true,
                     keyboardType: TextInputType.phone,
-                    validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
+                    validator: (val) =>
+                    (val == null || val.isEmpty) ? 'Required' : null,
                   ),
                   const SizedBox(height: 20),
                   Row(
                     children: [
                       Expanded(
                         child: _buildSmallButton('Payment Mode', () async {
-                          final result = await context.push(RouteNames.paymentMode);
+                          final result =
+                          await context.push(RouteNames.paymentMode);
                           if (result != null && result is String) {
                             setState(() => _paymentType = result);
                           }
@@ -474,7 +628,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildSmallButton('Add Crew', () async {
-                          final result = await context.push(RouteNames.addCrew, extra: _crewData);
+                          final result = await context.push(
+                              RouteNames.addCrew,
+                              extra: _crewData);
                           if (result != null && result is CrewEntity) {
                             setState(() => _crewData = result);
                           }
@@ -485,9 +641,17 @@ class _CreateTripPageState extends State<CreateTripPage> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      Expanded(child: _buildOutlineButton('Broadcast', isSelected: _isBroadcast, onTap: () => setState(() => _isBroadcast = true))),
+                      Expanded(
+                          child: _buildOutlineButton('Broadcast',
+                              isSelected: _isBroadcast,
+                              onTap: () =>
+                                  setState(() => _isBroadcast = true))),
                       const SizedBox(width: 12),
-                      Expanded(child: _buildOutlineButton('Selective', isSelected: !_isBroadcast, onTap: () => setState(() => _isBroadcast = false))),
+                      Expanded(
+                          child: _buildOutlineButton('Selective',
+                              isSelected: !_isBroadcast,
+                              onTap: () =>
+                                  setState(() => _isBroadcast = false))),
                     ],
                   ),
                   const SizedBox(height: 30),
@@ -502,15 +666,26 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         ),
                       ),
                       child: ElevatedButton(
-                        onPressed: state.status == TripStatus.loading ? null : () => _onSubmit(context),
+                        onPressed: state.status == TripStatus.loading
+                            ? null
+                            : () => _onSubmit(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.transparent,
                           shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22)),
                         ),
                         child: state.status == TripStatus.loading
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text('Submit', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                            ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2))
+                            : Text(isEdit ? 'Update' : 'Submit',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ),
@@ -521,6 +696,50 @@ class _CreateTripPageState extends State<CreateTripPage> {
           ),
         );
       },
+    );
+  }
+
+  /// Shows a compact summary of waypoints below the destination field.
+  Widget _buildWaypointsSummary() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.orange.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${_waypoints.length} waypoint${_waypoints.length > 1 ? 's' : ''} added',
+            style: TextStyle(
+                fontSize: 12,
+                color: Colors.orange.shade800,
+                fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: _waypoints.map((wp) {
+              return Chip(
+                label: Text(
+                  wp.name.length > 20
+                      ? '${wp.name.substring(0, 20)}…'
+                      : wp.name,
+                  style: const TextStyle(fontSize: 11),
+                ),
+                backgroundColor: Colors.orange.shade100,
+                padding: EdgeInsets.zero,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -541,7 +760,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
             text: label,
             style: const TextStyle(color: Color(0xFF5E6D7E), fontSize: 14),
             children: [
-              if (isRequired) const TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+              if (isRequired)
+                const TextSpan(
+                    text: ' *', style: TextStyle(color: Colors.red)),
             ],
           ),
         ),
@@ -554,12 +775,24 @@ class _CreateTripPageState extends State<CreateTripPage> {
           validator: validator,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            suffixIcon: suffixIcon != null ? Icon(suffixIcon, color: const Color(0xFF5E6D7E)) : null,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD1D9E0))),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD1D9E0))),
-            errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red)),
-            focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 2)),
+            contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            suffixIcon: suffixIcon != null
+                ? Icon(suffixIcon, color: const Color(0xFF5E6D7E))
+                : null,
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFD1D9E0))),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFD1D9E0))),
+            errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.red)),
+            focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                const BorderSide(color: Colors.red, width: 2)),
           ),
         ),
       ],
@@ -582,51 +815,71 @@ class _CreateTripPageState extends State<CreateTripPage> {
             text: label,
             style: const TextStyle(color: Color(0xFF5E6D7E), fontSize: 14),
             children: [
-              if (isRequired) const TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
+              if (isRequired)
+                const TextSpan(
+                    text: ' *', style: TextStyle(color: Colors.red)),
             ],
           ),
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: value,
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          items:
+          items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
           onChanged: onChanged,
           validator: validator,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD1D9E0))),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD1D9E0))),
-            errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red)),
-            focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 2)),
+            contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFD1D9E0))),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFD1D9E0))),
+            errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.red)),
+            focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                const BorderSide(color: Colors.red, width: 2)),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildLocationPicker({required String label, String? value, required VoidCallback onTap}) {
+  Widget _buildLocationPicker(
+      {required String label, String? value, required VoidCallback onTap}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Color(0xFF5E6D7E), fontSize: 14)),
+        Text(label,
+            style:
+            const TextStyle(color: Color(0xFF5E6D7E), fontSize: 14)),
         const SizedBox(height: 8),
         InkWell(
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               border: Border.all(color: const Color(0xFFD1D9E0)),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
-                const Icon(Icons.location_on_outlined, color: Color(0xFFCA5049)),
+                const Icon(Icons.location_on_outlined,
+                    color: Color(0xFFCA5049)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     value ?? 'Select Location',
-                    style: TextStyle(color: value == null ? Colors.grey : Colors.black, fontSize: 14),
+                    style: TextStyle(
+                        color: value == null ? Colors.grey : Colors.black,
+                        fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -654,7 +907,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
     );
   }
 
-  Widget _buildOutlineButton(String label, {required bool isSelected, required VoidCallback onTap}) {
+  Widget _buildOutlineButton(String label,
+      {required bool isSelected, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Container(

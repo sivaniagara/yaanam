@@ -16,6 +16,15 @@ class CreateTripSubmitted extends TripEvent {
   List<Object?> get props => [trip];
 }
 
+class UpdateTripSubmitted extends TripEvent {
+  final TripEntity trip;
+
+  const UpdateTripSubmitted(this.trip);
+
+  @override
+  List<Object?> get props => [trip];
+}
+
 class ViewRoutesRequested extends TripEvent {
   final ViewRoutesRequestEntity request;
 
@@ -23,4 +32,26 @@ class ViewRoutesRequested extends TripEvent {
 
   @override
   List<Object?> get props => [request];
+}
+
+class GetTripsRequested extends TripEvent {
+  final String endpoint;
+
+  const GetTripsRequested(this.endpoint);
+
+  @override
+  List<Object?> get props => [endpoint];
+}
+
+class GetOrganisedTripsRequested extends TripEvent {
+  const GetOrganisedTripsRequested();
+}
+
+class GetTripDetailRequested extends TripEvent {
+  final int tripId;
+
+  const GetTripDetailRequested(this.tripId);
+
+  @override
+  List<Object?> get props => [tripId];
 }

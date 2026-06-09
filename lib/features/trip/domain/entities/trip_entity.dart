@@ -12,10 +12,14 @@ class TripEntity extends Equatable {
   final String sourceCity;
   final String sourceState;
   final String startingPoint;
+  final double? sourceLat;
+  final double? sourceLng;
   final String destinationCity;
   final String destinationState;
   final String endPoint;
-  final double cost;
+  final double? destinationLat;
+  final double? destinationLng;
+  final String cost;
   final int maxParticipants;
   final int maxVehicle;
   final CrewEntity crew;
@@ -36,9 +40,13 @@ class TripEntity extends Equatable {
     required this.sourceCity,
     required this.sourceState,
     required this.startingPoint,
+    this.sourceLat,
+    this.sourceLng,
     required this.endPoint,
     required this.destinationCity,
     required this.destinationState,
+    this.destinationLat,
+    this.destinationLng,
     required this.cost,
     required this.maxParticipants,
     required this.maxVehicle,
@@ -61,9 +69,13 @@ class TripEntity extends Equatable {
         startingPoint,
         sourceCity,
         sourceState,
+        sourceLat,
+        sourceLng,
         endPoint,
         destinationCity,
         destinationState,
+        destinationLat,
+        destinationLng,
         cost,
         maxParticipants,
         maxVehicle,

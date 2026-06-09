@@ -4,14 +4,16 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 class ViewRoutesRequestEntity extends Equatable {
   final RouteLocationEntity source;
   final RouteLocationEntity destination;
+  final List<RouteLocationEntity>? waypoints;
 
   const ViewRoutesRequestEntity({
     required this.source,
     required this.destination,
+    this.waypoints,
   });
 
   @override
-  List<Object?> get props => [source, destination];
+  List<Object?> get props => [source, destination, waypoints];
 }
 
 class RouteLocationEntity extends Equatable {
@@ -39,7 +41,7 @@ class ViewRoutesResponseEntity extends Equatable {
   final RouteLocationEntity destination;
   final List<RouteLocationEntity> waypoints;
   final String polyline;
-  final List<PointLatLng> polylinePoints; // ✅ Expects PointLatLng
+  final List<PointLatLng> polylinePoints;
   final int distance;
   final int duration;
   final String createdAt;

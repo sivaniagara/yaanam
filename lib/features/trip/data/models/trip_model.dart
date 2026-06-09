@@ -11,9 +11,13 @@ class TripModel extends TripEntity {
     required super.vehicleType,
     required super.routeId,
     required super.startingPoint,
+    super.sourceLat,
+    super.sourceLng,
     required super.sourceCity,
     required super.sourceState,
     required super.endPoint,
+    super.destinationLat,
+    super.destinationLng,
     required super.destinationCity,
     required super.destinationState,
     required super.cost,
@@ -27,10 +31,6 @@ class TripModel extends TripEntity {
   });
 
   factory TripModel.fromJson(Map<String, dynamic> json) {
-    // If the data is coming from the create trip response, it might be nested under 'data' 
-    // and use different keys (e.g., 'trip_id' instead of 'id').
-    // We handle the normalization in the data source, but adding resilience here.
-    
     return TripModel(
       id: json['id'] ?? json['trip_id'],
       name: json['name'] ?? '',
@@ -41,12 +41,16 @@ class TripModel extends TripEntity {
       vehicleType: json['vehicle_type'] ?? '',
       routeId: json['route_id'] ?? 0,
       startingPoint: json['starting_point'] ?? (json['source'] != null ? json['source']['name'] : ''),
+      sourceLat: json['source_lat'],
+      sourceLng: json['source_lng'],
       sourceCity: json['source_city'] ?? (json['source'] != null ? json['source']['city'] : ''),
       sourceState: json['source_state'] ?? (json['source'] != null ? json['source']['state'] : ''),
       endPoint: json['end_point'] ?? (json['destination'] != null ? json['destination']['name'] : ''),
+      destinationLat: json['destination_lat'],
+      destinationLng: json['destination_lng'],
       destinationCity: json['destination_city'] ?? (json['destination'] != null ? json['destination']['city'] : ''),
       destinationState: json['destination_state'] ?? (json['destination'] != null ? json['destination']['state'] : ''),
-      cost: (json['cost'] as num? ?? 0).toDouble(),
+      cost: json['cost'] ?? '',
       maxParticipants: json['max_participants'] ?? 0,
       maxVehicle: json['max_vehicle'] ?? 0,
       crew: json['crew'] != null 
