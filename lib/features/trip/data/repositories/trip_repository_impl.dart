@@ -152,4 +152,16 @@ class TripRepositoryImpl implements TripRepository {
       return const Left(ServerFailure('An unexpected error occurred while fetching trip details'));
     }
   }
+
+  @override
+  Future<Either<Failure, Unit>> publishTrip(int tripId) async {
+    try {
+      await remoteDataSource.publishTrip(tripId);
+      return const Right(unit);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return const Left(ServerFailure('An unexpected error occurred while publishing the trip'));
+    }
+  }
 }

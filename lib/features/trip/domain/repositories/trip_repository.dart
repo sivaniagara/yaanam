@@ -12,4 +12,5 @@ abstract class TripRepository {
   Future<Either<Failure, List<TripEntity>>> getTrips(String endpoint);
   Future<Either<Failure, List<OrganiserTripEntity>>> getOrganisedTrips();
   Future<Either<Failure, TripEntity>> getTripDetail(int tripId);
+  Future<Either<Failure, Unit>> publishTrip(int tripId);
 }

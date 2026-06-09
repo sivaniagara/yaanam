@@ -13,6 +13,7 @@ abstract class TripRemoteDataSource {
   Future<List<TripModel>> getTrips(String endpoint);
   Future<List<OrganiserTripModel>> getOrganisedTrips();
   Future<TripModel> getTripDetail(int tripId);
+  Future<void> publishTrip(int tripId);
 }
 
 class TripRemoteDataSourceImpl implements TripRemoteDataSource {
@@ -143,6 +144,26 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
       }
     } on DioException catch (e) {
       final String message = e.response?.data['message'] ?? 'Failed to fetch trip details';
+      throw ServerException(message);
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException('Network error occurred');
+    }
+  }
+
+  @override
+  Future<void> publishTrip(int tripId) async {
+    try {
+      final String endpoint = ApiEndpoints.publishTrip.replaceAll(':tripId', tripId.toString());
+      final response = await httpService.put(
+        endpoint,
+        data: {"action": "publish"},
+      );
+      if (response.data['success'] != true) {
+        throw ServerException(response.data['message'] ?? 'Failed to publish trip');
+      }
+    } on DioException catch (e) {
+      final String message = e.response?.data['message'] ?? 'Failed to publish trip';
       throw ServerException(message);
     } catch (e) {
       if (e is ServerException) rethrow;

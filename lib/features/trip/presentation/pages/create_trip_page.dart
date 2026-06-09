@@ -333,17 +333,39 @@ class _CreateTripPageState extends State<CreateTripPage> {
     return BlocConsumer<TripBloc, TripState>(
       listener: (context, state) {
         if (state.status == TripStatus.success && state.trip != null) {
-          // Trip created/updated successfully — go to dashboard.
+          if (isEdit) {
+            AwesomeDialog(
+              context: context,
+              dialogType: DialogType.success,
+              title: 'Success',
+              desc: 'Trip updated successfully!',
+              btnOkOnPress: () => context.go(RouteNames.dashboard),
+            ).show();
+          } else {
+            AwesomeDialog(
+              context: context,
+              dialogType: DialogType.question,
+              title: 'Trip Created',
+              desc: 'Trip created successfully. Do you want to publish it now?',
+              btnCancelText: 'Later',
+              btnOkText: 'Publish',
+              btnCancelOnPress: () => context.go(RouteNames.dashboard),
+              btnOkOnPress: () {
+                if (state.trip?.id != null) {
+                  context.read<TripBloc>().add(PublishTripRequested(state.trip!.id!));
+                }
+              },
+            ).show();
+          }
+        } else if (state.status == TripStatus.publishSuccess) {
           AwesomeDialog(
             context: context,
             dialogType: DialogType.success,
-            title: 'Success',
-            desc: isEdit
-                ? 'Trip updated successfully!'
-                : 'Trip created successfully!',
+            title: 'Published',
+            desc: 'The trip was successfully published.',
             btnOkOnPress: () => context.go(RouteNames.dashboard),
           ).show();
-        } else if (state.status == TripStatus.error) {
+        } else if (state.status == TripStatus.error || state.status == TripStatus.publishError) {
           AwesomeDialog(
             context: context,
             dialogType: DialogType.error,
@@ -352,336 +374,345 @@ class _CreateTripPageState extends State<CreateTripPage> {
             btnOkOnPress: () {},
           ).show();
         }
-        // NOTE: We intentionally do NOT handle TripStatus.success + routeResponse here.
-        // RouteMapPage owns its own route fetching. Handling it here caused a second
-        // /routeMap push every time "Form Route" was tapped inside the open map page.
       },
       builder: (context, state) {
         // Show a small indicator on the button if a route has already been saved.
         final hasRoute = _routeId != null || state.routeResponse != null;
+        final isLoading = state.status == TripStatus.loading || state.status == TripStatus.publishLoading;
 
-        return Scaffold(
-          backgroundColor: Colors.white,
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            leading: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
+        return Stack(
+          children: [
+            Scaffold(
+              backgroundColor: Colors.white,
+              appBar: AppBar(
+                backgroundColor: Colors.white,
+                elevation: 0,
+                leading: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
                     ),
-                  ],
+                    child: IconButton(
+                      icon:
+                      const Icon(Icons.chevron_left, color: Colors.black),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
                 ),
-                child: IconButton(
-                  icon:
-                  const Icon(Icons.chevron_left, color: Colors.black),
-                  onPressed: () => Navigator.of(context).pop(),
+                title: Text(
+                  isEdit ? 'Edit Trip' : 'Create Trip',
+                  style: const TextStyle(
+                      color: Colors.black, fontWeight: FontWeight.bold),
                 ),
+                centerTitle: true,
               ),
-            ),
-            title: Text(
-              isEdit ? 'Edit Trip' : 'Create Trip',
-              style: const TextStyle(
-                  color: Colors.black, fontWeight: FontWeight.bold),
-            ),
-            centerTitle: true,
-          ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  _buildTextField(
-                    label: 'Name',
-                    controller: _nameController,
-                    isRequired: true,
-                    validator: (val) =>
-                    (val == null || val.isEmpty) ? 'Please enter name' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
+              body: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: _buildTextField(
-                          label: 'Start Date',
-                          controller: _startDateController,
-                          isRequired: true,
-                          suffixIcon: Icons.calendar_month_outlined,
-                          onTap: () =>
-                              _selectDate(context, _startDateController),
-                          validator: (val) =>
-                          (val == null || val.isEmpty) ? 'Required' : null,
-                        ),
+                      const SizedBox(height: 20),
+                      _buildTextField(
+                        label: 'Name',
+                        controller: _nameController,
+                        isRequired: true,
+                        validator: (val) =>
+                        (val == null || val.isEmpty) ? 'Please enter name' : null,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildTextField(
-                          label: 'End Date',
-                          controller: _endDateController,
-                          isRequired: true,
-                          suffixIcon: Icons.calendar_month_outlined,
-                          onTap: () =>
-                              _selectDate(context, _endDateController),
-                          validator: (val) =>
-                          (val == null || val.isEmpty) ? 'Required' : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _buildDropdownField(
-                    label: 'Ride Type',
-                    value: _selectedRideType,
-                    items: _rideTypes,
-                    isRequired: true,
-                    onChanged: (val) => setState(() => _selectedRideType = val),
-                    validator: (val) =>
-                    val == null ? 'Please select ride type' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildDropdownField(
-                    label: 'Vehicle',
-                    value: _selectedVehicle,
-                    items: _vehicles,
-                    isRequired: true,
-                    onChanged: (val) => setState(() => _selectedVehicle = val),
-                    validator: (val) =>
-                    val == null ? 'Please select vehicle' : null,
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: _othersNotAllowed,
-                        activeColor: AppColors.primary,
-                        onChanged: (val) =>
-                            setState(() => _othersNotAllowed = val!),
-                      ),
-                      const Text('Others not allowed',
-                          style:
-                          TextStyle(color: Colors.grey, fontSize: 14)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: _buildLocationPicker(
-                      label: 'Source',
-                      value: _sourceController.text.isEmpty
-                          ? null
-                          : _sourceController.text,
-                      onTap: () => _pickLocation(true),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: _buildLocationPicker(
-                      label: 'Destination',
-                      value: _destinationController.text.isEmpty
-                          ? null
-                          : _destinationController.text,
-                      onTap: () => _pickLocation(false),
-                    ),
-                  ),
-
-                  // Waypoints summary chip row (shown once waypoints exist)
-                  if (_waypoints.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    _buildWaypointsSummary(),
-                  ],
-
-                  const SizedBox(height: 20),
-
-                  // View Route Map button — shows a checkmark when route is saved.
-                  SizedBox(
-                    width: double.infinity,
-                    height: 45,
-                    child: ElevatedButton.icon(
-                      onPressed: state.status == TripStatus.loading
-                          ? null
-                          : _onViewRouteMap,
-                      icon: state.status == TripStatus.loading &&
-                          state.routeResponse == null
-                          ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2),
-                      )
-                          : Icon(
-                        hasRoute ? Icons.map : Icons.map_outlined,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      label: Text(
-                        hasRoute ? 'View / Edit Route Map' : 'View Route Map',
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 16),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFCA5049),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 15),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: CircleAvatar(
-                      radius: 18,
-                      backgroundColor: Color(0xFFCA5049),
-                      child: Icon(Icons.chat_bubble,
-                          color: Colors.white, size: 18),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildTextField(
-                          label: 'Cost',
-                          controller: _costController,
-                          isRequired: true,
-                          keyboardType: TextInputType.number,
-                          validator: (val) =>
-                          (val == null || val.isEmpty) ? 'Required' : null,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildTextField(
-                          label: 'Max Participants',
-                          controller: _maxParticipantsController,
-                          isRequired: true,
-                          keyboardType: TextInputType.number,
-                          validator: (val) =>
-                          (val == null || val.isEmpty) ? 'Required' : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _buildTextField(
-                    label: 'Last Date to Join',
-                    controller: _lastDateToJoinController,
-                    isRequired: true,
-                    suffixIcon: Icons.calendar_month_outlined,
-                    onTap: () =>
-                        _selectDate(context, _lastDateToJoinController),
-                    validator: (val) =>
-                    (val == null || val.isEmpty) ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildTextField(
-                    label: 'Max Vehicle',
-                    controller: _maxVehicleController,
-                    isRequired: true,
-                    keyboardType: TextInputType.number,
-                    validator: (val) =>
-                    (val == null || val.isEmpty) ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildTextField(
-                    label: 'Mobile No (Trip Organizer)',
-                    controller: _mobileController,
-                    isRequired: true,
-                    keyboardType: TextInputType.phone,
-                    validator: (val) =>
-                    (val == null || val.isEmpty) ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildSmallButton('Payment Mode', () async {
-                          final result =
-                          await context.push(RouteNames.paymentMode);
-                          if (result != null && result is String) {
-                            setState(() => _paymentType = result);
-                          }
-                        }),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildSmallButton('Add Crew', () async {
-                          final result = await context.push(
-                              RouteNames.addCrew,
-                              extra: _crewData);
-                          if (result != null && result is CrewEntity) {
-                            setState(() => _crewData = result);
-                          }
-                        }),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                          child: _buildOutlineButton('Broadcast',
-                              isSelected: _isBroadcast,
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              label: 'Start Date',
+                              controller: _startDateController,
+                              isRequired: true,
+                              suffixIcon: Icons.calendar_month_outlined,
                               onTap: () =>
-                                  setState(() => _isBroadcast = true))),
-                      const SizedBox(width: 12),
-                      Expanded(
-                          child: _buildOutlineButton('Selective',
-                              isSelected: !_isBroadcast,
+                                  _selectDate(context, _startDateController),
+                              validator: (val) =>
+                              (val == null || val.isEmpty) ? 'Required' : null,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildTextField(
+                              label: 'End Date',
+                              controller: _endDateController,
+                              isRequired: true,
+                              suffixIcon: Icons.calendar_month_outlined,
                               onTap: () =>
-                                  setState(() => _isBroadcast = false))),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-                  SizedBox(
-                    width: 200,
-                    height: 45,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(22),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF8B1D1D), Color(0xFFCA5049)],
+                                  _selectDate(context, _endDateController),
+                              validator: (val) =>
+                              (val == null || val.isEmpty) ? 'Required' : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDropdownField(
+                        label: 'Ride Type',
+                        value: _selectedRideType,
+                        items: _rideTypes,
+                        isRequired: true,
+                        onChanged: (val) => setState(() => _selectedRideType = val),
+                        validator: (val) =>
+                        val == null ? 'Please select ride type' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDropdownField(
+                        label: 'Vehicle',
+                        value: _selectedVehicle,
+                        items: _vehicles,
+                        isRequired: true,
+                        onChanged: (val) => setState(() => _selectedVehicle = val),
+                        validator: (val) =>
+                        val == null ? 'Please select vehicle' : null,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _othersNotAllowed,
+                            activeColor: AppColors.primary,
+                            onChanged: (val) =>
+                                setState(() => _othersNotAllowed = val!),
+                          ),
+                          const Text('Others not allowed',
+                              style:
+                              TextStyle(color: Colors.grey, fontSize: 14)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: _buildLocationPicker(
+                          label: 'Source',
+                          value: _sourceController.text.isEmpty
+                              ? null
+                              : _sourceController.text,
+                          onTap: () => _pickLocation(true),
                         ),
                       ),
-                      child: ElevatedButton(
-                        onPressed: state.status == TripStatus.loading
-                            ? null
-                            : () => _onSubmit(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(22)),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: _buildLocationPicker(
+                          label: 'Destination',
+                          value: _destinationController.text.isEmpty
+                              ? null
+                              : _destinationController.text,
+                          onTap: () => _pickLocation(false),
                         ),
-                        child: state.status == TripStatus.loading
-                            ? const SizedBox(
-                            height: 20,
-                            width: 20,
+                      ),
+
+                      // Waypoints summary chip row (shown once waypoints exist)
+                      if (_waypoints.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        _buildWaypointsSummary(),
+                      ],
+
+                      const SizedBox(height: 20),
+
+                      // View Route Map button — shows a checkmark when route is saved.
+                      SizedBox(
+                        width: double.infinity,
+                        height: 45,
+                        child: ElevatedButton.icon(
+                          onPressed: isLoading
+                              ? null
+                              : _onViewRouteMap,
+                          icon: state.status == TripStatus.loading &&
+                              state.routeResponse == null
+                              ? const SizedBox(
+                            height: 18,
+                            width: 18,
                             child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2))
-                            : Text(isEdit ? 'Update' : 'Submit',
+                                color: Colors.white, strokeWidth: 2),
+                          )
+                              : Icon(
+                            hasRoute ? Icons.map : Icons.map_outlined,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          label: Text(
+                            hasRoute ? 'View / Edit Route Map' : 'View Route Map',
                             style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold)),
+                                color: Colors.white, fontSize: 16),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFCA5049),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
                       ),
-                    ),
+
+                      const SizedBox(height: 15),
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: CircleAvatar(
+                          radius: 18,
+                          backgroundColor: Color(0xFFCA5049),
+                          child: Icon(Icons.chat_bubble,
+                              color: Colors.white, size: 18),
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              label: 'Cost',
+                              controller: _costController,
+                              isRequired: true,
+                              keyboardType: TextInputType.number,
+                              validator: (val) =>
+                              (val == null || val.isEmpty) ? 'Required' : null,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildTextField(
+                              label: 'Max Participants',
+                              controller: _maxParticipantsController,
+                              isRequired: true,
+                              keyboardType: TextInputType.number,
+                              validator: (val) =>
+                              (val == null || val.isEmpty) ? 'Required' : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTextField(
+                        label: 'Last Date to Join',
+                        controller: _lastDateToJoinController,
+                        isRequired: true,
+                        suffixIcon: Icons.calendar_month_outlined,
+                        onTap: () =>
+                            _selectDate(context, _lastDateToJoinController),
+                        validator: (val) =>
+                        (val == null || val.isEmpty) ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTextField(
+                        label: 'Max Vehicle',
+                        controller: _maxVehicleController,
+                        isRequired: true,
+                        keyboardType: TextInputType.number,
+                        validator: (val) =>
+                        (val == null || val.isEmpty) ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTextField(
+                        label: 'Mobile No (Trip Organizer)',
+                        controller: _mobileController,
+                        isRequired: true,
+                        keyboardType: TextInputType.phone,
+                        validator: (val) =>
+                        (val == null || val.isEmpty) ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildSmallButton('Payment Mode', () async {
+                              final result =
+                              await context.push(RouteNames.paymentMode);
+                              if (result != null && result is String) {
+                                setState(() => _paymentType = result);
+                              }
+                            }),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildSmallButton('Add Crew', () async {
+                              final result = await context.push(
+                                  RouteNames.addCrew,
+                                  extra: _crewData);
+                              if (result != null && result is CrewEntity) {
+                                setState(() => _crewData = result);
+                              }
+                            }),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                              child: _buildOutlineButton('Broadcast',
+                                  isSelected: _isBroadcast,
+                                  onTap: () =>
+                                      setState(() => _isBroadcast = true))),
+                          const SizedBox(width: 12),
+                          Expanded(
+                              child: _buildOutlineButton('Selective',
+                                  isSelected: !_isBroadcast,
+                                  onTap: () =>
+                                      setState(() => _isBroadcast = false))),
+                        ],
+                      ),
+                      const SizedBox(height: 30),
+                      SizedBox(
+                        width: 200,
+                        height: 45,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(22),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF8B1D1D), Color(0xFFCA5049)],
+                            ),
+                          ),
+                          child: ElevatedButton(
+                            onPressed: isLoading
+                                ? null
+                                : () => _onSubmit(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(22)),
+                            ),
+                            child: isLoading
+                                ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 2))
+                                : Text(isEdit ? 'Update' : 'Submit',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                    ],
                   ),
-                  const SizedBox(height: 40),
-                ],
+                ),
               ),
             ),
-          ),
+            if (state.status == TripStatus.publishLoading)
+              Container(
+                color: Colors.black26,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+          ],
         );
       },
     );

@@ -55,3 +55,12 @@ class GetTripDetailRequested extends TripEvent {
   @override
   List<Object?> get props => [tripId];
 }
+
+class PublishTripRequested extends TripEvent {
+  final int tripId;
+
+  const PublishTripRequested(this.tripId);
+
+  @override
+  List<Object?> get props => [tripId];
+}

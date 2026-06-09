@@ -14,4 +14,5 @@ class ApiEndpoints {
   static const String organiseTrips = 'trips/organiser/list';
   static const String activeTrips = 'trips/active';
   static const String getTrip = 'trips/:tripId';
+  static const String publishTrip = 'trips/:tripId/action';
 }

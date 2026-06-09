@@ -8,6 +8,7 @@ import '../domain/usecases/view_routes_usecase.dart';
 import '../domain/usecases/get_trips_usecase.dart';
 import '../domain/usecases/get_organised_trips_usecase.dart';
 import '../domain/usecases/get_trip_detail_usecase.dart';
+import '../domain/usecases/publish_trip_usecase.dart';
 import '../presentation/bloc/trip_bloc.dart';
 
 void initTripDependency() {
@@ -20,6 +21,7 @@ void initTripDependency() {
       getTripsUseCase: sl(),
       getOrganisedTripsUseCase: sl(),
       getTripDetailUseCase: sl(),
+      publishTripUseCase: sl(),
     ),
   );
 
@@ -30,6 +32,7 @@ void initTripDependency() {
   sl.registerLazySingleton(() => GetTripsUseCase(sl()));
   sl.registerLazySingleton(() => GetOrganisedTripsUseCase(sl()));
   sl.registerLazySingleton(() => GetTripDetailUseCase(sl()));
+  sl.registerLazySingleton(() => PublishTripUseCase(sl()));
 
   // Repository
   sl.registerLazySingleton<TripRepository>(

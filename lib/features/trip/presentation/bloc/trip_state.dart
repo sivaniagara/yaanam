@@ -1,6 +1,17 @@
 part of 'trip_bloc.dart';
 
-enum TripStatus { initial, loading, success, error, detailLoading, detailSuccess, detailError }
+enum TripStatus {
+  initial,
+  loading,
+  success,
+  error,
+  detailLoading,
+  detailSuccess,
+  detailError,
+  publishLoading,
+  publishSuccess,
+  publishError
+}
 
 class TripState extends Equatable {
   final TripStatus status;
