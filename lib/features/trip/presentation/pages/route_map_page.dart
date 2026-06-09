@@ -42,32 +42,23 @@ class _RouteMapPageState extends State<RouteMapPage> {
   void initState() {
     super.initState();
 
-    // 1. Seed waypoints from the caller (CreateTripPage always passes these).
+    // 1. Seed waypoints (pure list mutation — safe before first frame).
     if (widget.initialWaypoints != null && widget.initialWaypoints!.isNotEmpty) {
       _waypoints.addAll(widget.initialWaypoints!);
     }
 
-    // 2. If the bloc already holds a completed route, render it immediately.
-    final blocState = context.read<TripBloc>().state;
-    final existingRoute = blocState.routeResponse;
-
-    if (existingRoute != null && existingRoute.polylinePoints.isNotEmpty) {
-      // Restore polyline.
-      _polylines = _buildPolylines(existingRoute.polylinePoints);
-
-      // Fit the camera after the first frame (map controller available).
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _fitBounds(existingRoute.polylinePoints
-            .map((p) => LatLng(p.latitude, p.longitude))
-            .toList());
-      });
-    } else {
-      // No existing route — auto-fetch so the user sees something right away.
-      WidgetsBinding.instance.addPostFrameCallback((_) => _fetchRoute());
-    }
-
-    // 3. Draw all markers (source, destination, waypoints).
-    _updateMarkers();
+    // 2. After the first frame: draw markers and fetch the route.
+    //    We ALWAYS fetch fresh here. CreateTripPage no longer pre-fetches
+    //    before navigating, so we cannot rely on the bloc already having a
+    //    matching routeResponse. The BlocConsumer listener below will update
+    //    the polyline + markers once the response arrives.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Draw source / destination / waypoint markers immediately so the
+      // user sees pins while the route loads.
+      setState(() => _markers = _buildMarkers());
+      _fetchRoute();
+    });
   }
 
   @override
@@ -104,29 +95,30 @@ class _RouteMapPageState extends State<RouteMapPage> {
     context.read<TripBloc>().add(ViewRoutesRequested(request));
   }
 
-  void _updateMarkers() {
-    final newMarkers = <Marker>{};
+  /// Pure builder — reads current state, returns marker set, no setState.
+  Set<Marker> _buildMarkers() {
+    final markers = <Marker>{};
 
-    // Source marker (fixed, blue).
-    newMarkers.add(Marker(
+    // Source (fixed, blue).
+    markers.add(Marker(
       markerId: const MarkerId('source'),
       position: LatLng(widget.source.lat, widget.source.lng),
       icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
       infoWindow: InfoWindow(title: 'Start: ${widget.source.name}'),
     ));
 
-    // Destination marker (fixed, red).
-    newMarkers.add(Marker(
+    // Destination (fixed, red).
+    markers.add(Marker(
       markerId: const MarkerId('destination'),
       position: LatLng(widget.destination.lat, widget.destination.lng),
       icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
       infoWindow: InfoWindow(title: 'End: ${widget.destination.name}'),
     ));
 
-    // Waypoint markers (draggable, orange).
+    // Waypoints (draggable, orange).
     for (int i = 0; i < _waypoints.length; i++) {
       final wp = _waypoints[i];
-      newMarkers.add(Marker(
+      markers.add(Marker(
         markerId: MarkerId('waypoint_$i'),
         position: LatLng(wp.lat, wp.lng),
         draggable: true,
@@ -136,8 +128,11 @@ class _RouteMapPageState extends State<RouteMapPage> {
       ));
     }
 
-    setState(() => _markers = newMarkers);
+    return markers;
   }
+
+  /// Convenience: build markers and push into a single setState.
+  void _updateMarkers() => setState(() => _markers = _buildMarkers());
 
   Future<void> _onWaypointDragged(int index, LatLng newPosition) async {
     String city = _waypoints[index].city;
@@ -232,17 +227,22 @@ class _RouteMapPageState extends State<RouteMapPage> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<TripBloc, TripState>(
+      // Only rebuild the widget tree when loading state changes (button
+      // enable/disable). Do NOT rebuild on every state — that can cause
+      // GoogleMap to reset its internal tile/marker state mid-flight.
+      buildWhen: (previous, current) =>
+      previous.status != current.status,
       listener: (context, state) {
         if (state.status == TripStatus.success && state.routeResponse != null) {
           final route = state.routeResponse!;
 
-          setState(() {
-            // ✅ ONLY update polyline
-            _polylines = _buildPolylines(route.polylinePoints);
+          // Build the updated marker set inline so everything goes into
+          // ONE setState — preventing a second rebuild from wiping markers.
+          final newMarkers = _buildMarkers();
 
-            // ❌ DO NOT TOUCH WAYPOINTS
-            // _waypoints.clear();   <-- removed
-            // _waypoints.addAll(...); <-- removed
+          setState(() {
+            _polylines = _buildPolylines(route.polylinePoints);
+            _markers = newMarkers;
           });
 
           if (route.polylinePoints.isNotEmpty) {
@@ -250,9 +250,6 @@ class _RouteMapPageState extends State<RouteMapPage> {
                 .map((p) => LatLng(p.latitude, p.longitude))
                 .toList());
           }
-
-          // ✅ redraw markers using existing waypoints
-          _updateMarkers();
         }
       },
       builder: (context, state) {
@@ -472,7 +469,7 @@ class _RouteMapPageState extends State<RouteMapPage> {
               ),
               child: isLoading
                   ? const SizedBox(
-                  height: 20,
+                  height: 25,
                   width: 20,
                   child: CircularProgressIndicator(
                       color: Colors.white, strokeWidth: 2))

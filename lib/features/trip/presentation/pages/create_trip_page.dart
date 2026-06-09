@@ -206,9 +206,10 @@ class _CreateTripPageState extends State<CreateTripPage> {
       extra: {
         'source': _sourceEntity,
         'destination': _destinationEntity,
-        // Always pass the latest local waypoints so the map restores them.
         'initialWaypoints': List<RouteLocationEntity>.from(_waypoints),
-        'bloc': context.read<TripBloc>(),
+        // 'bloc' removed — RouteMapPage inherits TripBloc via the widget tree
+        // from CreateTripPage's BlocProvider. Passing it via extra caused
+        // GoRouter serialization warnings.
       },
     );
 
@@ -241,23 +242,12 @@ class _CreateTripPageState extends State<CreateTripPage> {
   }
 
   /// Called when user taps "View Route Map".
-  /// If a route already exists in the bloc, navigate directly.
-  /// Otherwise dispatch a new fetch first — the listener will navigate on success.
+  /// Always navigate directly — RouteMapPage fetches the route itself.
+  /// Never dispatch ViewRoutesRequested from here; doing so causes
+  /// the BlocConsumer listener below to re-push RouteMapPage every time
+  /// "Form Route" is tapped inside the already-open map screen.
   void _onViewRouteMap() {
-    final blocState = context.read<TripBloc>().state;
-
-    if (blocState.routeResponse != null) {
-      // Route already fetched — go straight to the map with existing data.
-      _navigateToRouteMap();
-    } else {
-      // No route yet — ask the bloc to fetch, the listener will push the page.
-      final request = ViewRoutesRequestEntity(
-        source: _sourceEntity,
-        destination: _destinationEntity,
-        waypoints: List<RouteLocationEntity>.from(_waypoints),
-      );
-      context.read<TripBloc>().add(ViewRoutesRequested(request));
-    }
+    _navigateToRouteMap();
   }
 
   void _onSubmit(BuildContext context) async {
@@ -342,22 +332,17 @@ class _CreateTripPageState extends State<CreateTripPage> {
     final isEdit = widget.trip != null;
     return BlocConsumer<TripBloc, TripState>(
       listener: (context, state) {
-        if (state.status == TripStatus.success) {
-          if (state.trip != null) {
-            // Trip created/updated successfully.
-            AwesomeDialog(
-              context: context,
-              dialogType: DialogType.success,
-              title: 'Success',
-              desc: isEdit
-                  ? 'Trip updated successfully!'
-                  : 'Trip created successfully!',
-              btnOkOnPress: () => context.go(RouteNames.dashboard),
-            ).show();
-          } else if (state.routeResponse != null) {
-            // Route fetched for the first time — navigate to the map.
-            _navigateToRouteMap();
-          }
+        if (state.status == TripStatus.success && state.trip != null) {
+          // Trip created/updated successfully — go to dashboard.
+          AwesomeDialog(
+            context: context,
+            dialogType: DialogType.success,
+            title: 'Success',
+            desc: isEdit
+                ? 'Trip updated successfully!'
+                : 'Trip created successfully!',
+            btnOkOnPress: () => context.go(RouteNames.dashboard),
+          ).show();
         } else if (state.status == TripStatus.error) {
           AwesomeDialog(
             context: context,
@@ -367,6 +352,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
             btnOkOnPress: () {},
           ).show();
         }
+        // NOTE: We intentionally do NOT handle TripStatus.success + routeResponse here.
+        // RouteMapPage owns its own route fetching. Handling it here caused a second
+        // /routeMap push every time "Form Route" was tapped inside the open map page.
       },
       builder: (context, state) {
         // Show a small indicator on the button if a route has already been saved.

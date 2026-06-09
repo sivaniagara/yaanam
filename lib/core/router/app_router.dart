@@ -83,7 +83,7 @@ final router = GoRouter(
         final Map<String, dynamic> extra = state.extra as Map<String, dynamic>? ?? {};
         final String identifier = extra['emailId'] ?? extra['mobile'] ?? 'your email/phone';
         final VerificationType type = extra['verificationType'] ?? VerificationType.signup;
-        
+
         return VerificationCodePage(
           targetIdentifier: identifier,
           verificationType: type,
@@ -134,9 +134,11 @@ final router = GoRouter(
       path: RouteNames.routeMap,
       builder: (context, state) {
         final Map<String, dynamic> extra = state.extra as Map<String, dynamic>;
-        final TripBloc bloc = extra['bloc'] as TripBloc;
-        return BlocProvider.value(
-          value: bloc,
+        // GoRouter routes are isolated widget trees — /routeMap cannot inherit
+        // the BlocProvider from /create-trip. We create a dedicated TripBloc
+        // instance here so RouteMapPage has its own provider scope.
+        return BlocProvider(
+          create: (_) => sl<TripBloc>(),
           child: RouteMapPage(
             source: extra['source'] as RouteLocationEntity,
             destination: extra['destination'] as RouteLocationEntity,
