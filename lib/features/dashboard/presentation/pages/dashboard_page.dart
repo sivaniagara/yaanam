@@ -13,6 +13,7 @@ import 'package:yaanam/core/network/api_endpoints.dart';
 import 'package:yaanam/features/trip/domain/entities/organiser_trip_entity.dart';
 import 'package:yaanam/features/trip/presentation/bloc/trip_bloc.dart';
 import 'package:yaanam/features/trip/domain/entities/trip_entity.dart';
+import 'package:yaanam/features/trip/domain/entities/trip_summary_entity.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -268,7 +269,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 context.read<TripBloc>().add(GetTripDetailRequested(trip.id));
                               },
                               title: trip.name,
-                              bike: '', // Summary model doesn't have bike info
+                              bike: '', // Organiser summary doesn't have bike info here
                               status: trip.tripStatus,
                               statusColor: _getStatusColor(trip.tripStatus),
                               days: '${trip.startDate.split('T')[0]} - ${trip.endDate.split('T')[0]}',
@@ -290,16 +291,17 @@ class _DashboardPageState extends State<DashboardPage> {
                           itemBuilder: (context, index) {
                             final trip = state.trips[index];
                             return _buildTripCard(
-                              onTap: null, // Only user can edit trip in organiser list.
+                              onTap: null, // Tap handling for discovering/joining can be added here
                               title: trip.name,
-                              bike: '(${trip.vehicleType})',
+                              bike: '', // Summary structure doesn't include bike/vehicle info
                               status: trip.tripStatus,
                               statusColor: _getStatusColor(trip.tripStatus),
-                              days: '${trip.startDate} - ${trip.endDate}',
+                              days: '${trip.startDate.split('T')[0]} - ${trip.endDate.split('T')[0]}',
                               start: trip.sourceCity,
-                              startDate: trip.startDate,
+                              startDate: trip.startDate.split('T')[0],
                               end: trip.destinationCity,
-                              endDate: trip.endDate,
+                              endDate: trip.endDate.split('T')[0],
+                              extraInfo: 'Remaining: ${trip.participants.remaining}',
                             );
                           },
                         );
@@ -396,6 +398,7 @@ class _DashboardPageState extends State<DashboardPage> {
     String? extraInfo,
     VoidCallback? onTap,
   }) {
+    print("startDate : ${startDate}");
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -456,25 +459,27 @@ class _DashboardPageState extends State<DashboardPage> {
               children: [
                 const Icon(Icons.calendar_month_outlined, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
-                Text(days, style: const TextStyle(fontSize: 12, color: Colors.black87)),
-                const SizedBox(width: 8),
-                if (!showDatesOnly) ...[
-                  _buildLocationTag(start, startDate),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                    child: Icon(Icons.sync_alt, size: 14, color: Colors.grey),
+
+                Expanded( // 👈 prevents overflow from "days"
+                  child: Text(
+                    days,
+                    style: const TextStyle(fontSize: 12, color: Colors.black87),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  _buildLocationTag(end, endDate),
-                ] else ...[
-                   _buildLocationTag(start, ''),
-                   const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                    child: Icon(Icons.sync_alt, size: 14, color: Colors.grey),
-                  ),
-                  _buildLocationTag(end, ''),
-                ]
+                ),
+
+                const SizedBox(width: 6),
+
+                Flexible(child: _buildLocationTag(start, startDate)),
+
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4),
+                  child: Icon(Icons.sync_alt, size: 14, color: Colors.grey),
+                ),
+
+                Flexible(child: _buildLocationTag(end, endDate)),
               ],
-            ),
+            )
           ],
         ),
       ),
@@ -482,18 +487,33 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildLocationTag(String loc, String date) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Column(
-        children: [
-          Text(loc, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
-          if (date.isNotEmpty)
-            Text(date, style: const TextStyle(fontSize: 9, color: Colors.grey)),
-        ],
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 90), // 👈 important
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // 👈 important
+          children: [
+            Text(
+              loc,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1, // 👈 MUST
+            ),
+            if (date.isNotEmpty)
+              Text(
+                date,
+                style: const TextStyle(fontSize: 9, color: Colors.grey),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1, // 👈 MUST
+              ),
+          ],
+        ),
       ),
     );
   }

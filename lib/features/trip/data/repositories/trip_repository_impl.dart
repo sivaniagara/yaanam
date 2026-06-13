@@ -118,7 +118,7 @@ class TripRepositoryImpl implements TripRepository {
   }
 
   @override
-  Future<Either<Failure, List<TripEntity>>> getTrips(String endpoint) async {
+  Future<Either<Failure, List<TripSummaryEntity>>> getTrips(String endpoint) async {
     try {
       final result = await remoteDataSource.getTrips(endpoint);
       return Right(result);

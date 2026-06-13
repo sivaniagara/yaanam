@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
-import '../entities/trip_entity.dart';
+import '../entities/trip_summary_entity.dart';
 import '../repositories/trip_repository.dart';
 
 class GetTripsUseCase {
@@ -8,7 +8,7 @@ class GetTripsUseCase {
 
   GetTripsUseCase(this.repository);
 
-  Future<Either<Failure, List<TripEntity>>> call(String endpoint) async {
+  Future<Either<Failure, List<TripSummaryEntity>>> call(String endpoint) async {
     return await repository.getTrips(endpoint);
   }
 }

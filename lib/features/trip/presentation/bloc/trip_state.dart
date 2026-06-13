@@ -18,7 +18,7 @@ class TripState extends Equatable {
   final String? errorMessage;
   final TripEntity? trip;
   final ViewRoutesResponseEntity? routeResponse;
-  final List<TripEntity> trips;
+  final List<TripSummaryEntity> trips;
   final List<OrganiserTripEntity> organisedTrips;
 
   const TripState({
@@ -37,7 +37,7 @@ class TripState extends Equatable {
     String? errorMessage,
     TripEntity? trip,
     ViewRoutesResponseEntity? routeResponse,
-    List<TripEntity>? trips,
+    List<TripSummaryEntity>? trips,
     List<OrganiserTripEntity>? organisedTrips,
   }) {
     return TripState(

@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:dartz/dartz.dart';
 import '../../domain/entities/organiser_trip_entity.dart';
 import '../../domain/entities/trip_entity.dart';
+import '../../domain/entities/trip_summary_entity.dart';
 import '../../domain/entities/view_routes_entity.dart';
 import '../../domain/usecases/create_trip_usecase.dart';
 import '../../domain/usecases/update_trip_usecase.dart';

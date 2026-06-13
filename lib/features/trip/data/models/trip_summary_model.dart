@@ -9,6 +9,7 @@ class TripSummaryModel extends TripSummaryEntity {
     required super.sourceCity,
     required super.destinationCity,
     required super.tripStatus,
+    required super.publishType,
     required super.maxParticipants,
     required super.participants,
   });
@@ -17,11 +18,12 @@ class TripSummaryModel extends TripSummaryEntity {
     return TripSummaryModel(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
-      startDate: json['start_date'] ?? '',
-      endDate: json['end_date'] ?? '',
-      sourceCity: json['source_city'] ?? '',
-      destinationCity: json['destination_city'] ?? '',
-      tripStatus: json['trip_status'] ?? '',
+      startDate: json['startDate'] ?? '',
+      endDate: json['endDate'] ?? '',
+      sourceCity: json['sourceCity'] ?? '',
+      destinationCity: json['destinationCity'] ?? '',
+      tripStatus: json['tripStatus'] ?? '',
+      publishType: json['publish_type'] ?? '',
       maxParticipants: json['max_participants'] ?? 0,
       participants: ParticipantsSummaryModel.fromJson(json['participants'] ?? {}),
     );

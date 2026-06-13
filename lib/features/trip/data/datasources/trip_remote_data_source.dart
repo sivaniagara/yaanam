@@ -5,13 +5,14 @@ import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/http_service.dart';
 import '../models/organiser_trip_model.dart';
 import '../models/trip_model.dart';
+import '../models/trip_summary_model.dart';
 import '../models/view_routes_model.dart';
 
 abstract class TripRemoteDataSource {
   Future<TripModel> createTrip(TripModel tripModel);
   Future<TripModel> updateTrip(TripModel tripModel);
   Future<ViewRoutesResponseModel> viewRoutes(ViewRoutesRequestModel requestModel);
-  Future<List<TripModel>> getTrips(String endpoint);
+  Future<List<TripSummaryModel>> getTrips(String endpoint);
   Future<List<OrganiserTripModel>> getOrganisedTrips();
   Future<TripModel> getTripDetail(int tripId);
   Future<void> publishTrip(int tripId);
@@ -96,7 +97,7 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
   }
 
   @override
-  Future<List<TripModel>> getTrips(String endpoint) async {
+  Future<List<TripSummaryModel>> getTrips(String endpoint) async {
     print("my trip called...");
     try {
       final response = await httpService.get(endpoint);
@@ -104,7 +105,7 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
       if (response.data['success'] == true) {
         final List<dynamic> data = response.data['data']['trips'] ?? [];
         debugPrint("my trips => $data");
-        return data.map((json) => TripModel.fromJson(json)).toList();
+        return data.map((json) => TripSummaryModel.fromJson(json)).toList();
       } else {
         throw ServerException(response.data['message'] ?? 'Failed to fetch trips');
       }

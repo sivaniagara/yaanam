@@ -8,6 +8,7 @@ class TripSummaryEntity extends Equatable {
   final String sourceCity;
   final String destinationCity;
   final String tripStatus;
+  final String publishType;
   final int maxParticipants;
   final ParticipantsSummaryEntity participants;
 
@@ -19,6 +20,7 @@ class TripSummaryEntity extends Equatable {
     required this.sourceCity,
     required this.destinationCity,
     required this.tripStatus,
+    required this.publishType,
     required this.maxParticipants,
     required this.participants,
   });
@@ -32,6 +34,7 @@ class TripSummaryEntity extends Equatable {
         sourceCity,
         destinationCity,
         tripStatus,
+        publishType,
         maxParticipants,
         participants,
       ];
