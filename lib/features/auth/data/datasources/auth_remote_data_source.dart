@@ -56,7 +56,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         ApiEndpoints.login,
         data: loginModel.toJson(),
       );
-      
+      print("response.data => ${response.data}");
       return LoginResponseModel.fromJson(response.data);
     } on DioException catch (e) {
       final String message = e.response?.data['message'] ?? 'Login failed';

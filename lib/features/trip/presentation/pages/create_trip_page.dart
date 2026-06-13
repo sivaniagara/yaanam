@@ -93,6 +93,17 @@ class _CreateTripPageState extends State<CreateTripPage> {
       _isBroadcast = trip.publishType.toLowerCase() == 'broadcast';
       _routeId = trip.routeId;
     }
+    else{
+      _startDateController.text = "2026-07-20";
+      _endDateController.text = "2026-07-21";
+      _lastDateToJoinController.text = "2026-07-03";
+      _selectedRideType = 'bike';
+      _selectedVehicle = 'Yamaha';
+      _costController.text = '1000';
+      _maxParticipantsController.text = '30';
+      _maxVehicleController.text = '20';
+      _mobileController.text = '9999999999';
+    }
   }
 
   @override
@@ -349,7 +360,10 @@ class _CreateTripPageState extends State<CreateTripPage> {
               desc: 'Trip created successfully. Do you want to publish it now?',
               btnCancelText: 'Later',
               btnOkText: 'Publish',
-              btnCancelOnPress: () => context.go(RouteNames.dashboard),
+              btnCancelOnPress: () {
+                context.pop();
+                // context.read<TripBloc>().add(const GetOrganisedTripsRequested());
+              },
               btnOkOnPress: () {
                 if (state.trip?.id != null) {
                   context.read<TripBloc>().add(PublishTripRequested(state.trip!.id!));
@@ -363,7 +377,10 @@ class _CreateTripPageState extends State<CreateTripPage> {
             dialogType: DialogType.success,
             title: 'Published',
             desc: 'The trip was successfully published.',
-            btnOkOnPress: () => context.go(RouteNames.dashboard),
+            btnOkOnPress: () {
+              context.pop();
+              // context.read<TripBloc>().add(const GetOrganisedTripsRequested());
+            },
           ).show();
         } else if (state.status == TripStatus.error || state.status == TripStatus.publishError) {
           AwesomeDialog(

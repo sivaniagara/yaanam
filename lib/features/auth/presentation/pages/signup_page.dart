@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yaanam/core/di/dependency_injection.dart';
@@ -41,13 +43,13 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   void initState() {
     super.initState();
-    _nameController.text = 'venkatesh';
-    _displayNameController.text = 'venky';
+    _nameController.text = 'Arun';
+    _displayNameController.text = 'Arun';
     _dobController.text = '1999-06-21';
-    _mobileController.text = '9123590805';
-    _emailController.text = 'venkatesh@gmail.com';
-    _passwordController.text = 'SivaYaanam@#1999';
-    _confirmPasswordController.text = 'SivaYaanam@#1999';
+    _mobileController.text = '6382485971';
+    _emailController.text = 'arun2002@gmail.com';
+    _passwordController.text = 'Arun@#2002';
+    _confirmPasswordController.text = 'Arun@#2002';
   }
 
   @override
@@ -76,6 +78,54 @@ class _SignUpPageState extends State<SignUpPage> {
       }
 
       final deviceInfo = DeviceInfoService();
+
+      // Get current location
+      double latitude = 0.0;
+      double longitude = 0.0;
+      String state = 'Unknown';
+      String city = 'Unknown';
+
+      try {
+        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          throw 'Location services are disabled. Please enable them to continue.';
+        }
+
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+          if (permission == LocationPermission.denied) {
+            throw 'Location permissions are denied';
+          }
+        }
+
+        if (permission == LocationPermission.deniedForever) {
+          throw 'Location permissions are permanently denied. Please enable them in settings.';
+        }
+
+        Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+        latitude = position.latitude;
+        longitude = position.longitude;
+
+        List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+        if (placemarks.isNotEmpty) {
+          state = placemarks[0].administrativeArea ?? 'Unknown';
+          city = placemarks[0].locality ?? 'Unknown';
+        }
+      } catch (e) {
+        if (mounted) {
+          AwesomeDialog(
+            context: context,
+            dialogType: DialogType.error,
+            title: 'Location Required',
+            desc: e.toString(),
+            btnOkOnPress: () {},
+          ).show();
+        }
+        return;
+      }
       
       final signupEntity = SignupEntity(
         name: _nameController.text,
@@ -88,11 +138,11 @@ class _SignUpPageState extends State<SignUpPage> {
         deviceType: deviceInfo.getDeviceType(),
         deviceMacAddress: await deviceInfo.getDeviceMacAddress(),
         profilePhoto: '', 
-        location: const LocationEntity(
-          latitude: 0.0,
-          longitude: 0.0,
-          state: 'Unknown',
-          city: 'Unknown',
+        location: LocationEntity(
+          latitude: latitude,
+          longitude: longitude,
+          state: state,
+          city: city,
         ),
         password: _passwordController.text,
       );
@@ -110,9 +160,10 @@ class _SignUpPageState extends State<SignUpPage> {
       child: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state.status == AuthStatus.otpSent) {
-            context.go(RouteNames.verificationCode, extra: {'mobile': _mobileController.text, 'verificationType': VerificationType.signup});
-          }else if (state.status == AuthStatus.error && state.errorMessage == ErrorMessage.userAlreadyExistSignUp) {
-            context.go(RouteNames.verificationCode, extra: {'mobile': _mobileController.text, 'verificationType': VerificationType.signup});
+            context.go(RouteNames.verificationCode, extra: {
+              'mobile': _mobileController.text,
+              'verificationType': VerificationType.signup
+            });
           } else if (state.status == AuthStatus.error) {
             AwesomeDialog(
               context: context,
@@ -120,9 +171,7 @@ class _SignUpPageState extends State<SignUpPage> {
               animType: AnimType.bottomSlide,
               title: 'Error',
               desc: state.errorMessage ?? 'Signup failed',
-              btnOkOnPress: () {
-                context.go(RouteNames.verificationCode, extra: {'mobile': _mobileController.text, 'verificationType': VerificationType.signup});
-              },
+              btnOkOnPress: () {},
               btnOkColor: Colors.red,
             ).show();
           }

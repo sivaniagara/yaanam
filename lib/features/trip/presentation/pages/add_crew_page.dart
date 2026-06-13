@@ -24,6 +24,11 @@ class _AddCrewPageState extends State<AddCrewPage> {
       _serviceContactController.text = widget.initialCrew!.servicePerson.contact;
       _organiserNameController.text = widget.initialCrew!.organiser.name;
       _organiserContactController.text = widget.initialCrew!.organiser.contact;
+    }else{
+      _serviceNameController.text = 'Rahul';
+      _serviceContactController.text = '1234565432';
+      _organiserNameController.text = 'Siva';
+      _organiserContactController.text = '8220676342';
     }
   }
 

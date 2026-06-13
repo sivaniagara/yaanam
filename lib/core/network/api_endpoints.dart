@@ -10,7 +10,7 @@ class ApiEndpoints {
   static const String createTrip = 'trips/create';
   static const String updateTrip = 'trips/update/:tripId';
   static const String viewRoutes = 'routes/route';
-  static const String tripList = 'trips/list';
+  static const String myTrip = 'riders/trips/discover?page=1&limit=10';
   static const String organiseTrips = 'trips/organiser/list';
   static const String activeTrips = 'trips/active';
   static const String getTrip = 'trips/:tripId';

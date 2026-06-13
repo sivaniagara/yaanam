@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/http_service.dart';
@@ -96,10 +97,13 @@ class TripRemoteDataSourceImpl implements TripRemoteDataSource {
 
   @override
   Future<List<TripModel>> getTrips(String endpoint) async {
+    print("my trip called...");
     try {
       final response = await httpService.get(endpoint);
+      debugPrint("my trips response => ${response.data}");
       if (response.data['success'] == true) {
-        final List<dynamic> data = response.data['data'] ?? [];
+        final List<dynamic> data = response.data['data']['trips'] ?? [];
+        debugPrint("my trips => $data");
         return data.map((json) => TripModel.fromJson(json)).toList();
       } else {
         throw ServerException(response.data['message'] ?? 'Failed to fetch trips');

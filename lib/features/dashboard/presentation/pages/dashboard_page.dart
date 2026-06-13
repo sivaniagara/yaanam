@@ -33,7 +33,7 @@ class _DashboardPageState extends State<DashboardPage> {
     // Fetch initial data for MY TRIP
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<TripBloc>().add(const GetTripsRequested(ApiEndpoints.tripList));
+        context.read<TripBloc>().add(const GetTripsRequested(ApiEndpoints.myTrip));
       }
     });
   }
@@ -58,7 +58,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     switch (tab) {
       case DashboardTab.myTrip:
-        context.read<TripBloc>().add(const GetTripsRequested(ApiEndpoints.tripList));
+        context.read<TripBloc>().add(const GetTripsRequested(ApiEndpoints.myTrip));
         break;
       case DashboardTab.organise:
         context.read<TripBloc>().add(const GetOrganisedTripsRequested());
@@ -222,7 +222,11 @@ class _DashboardPageState extends State<DashboardPage> {
                         
                         if (state.status == TripStatus.detailSuccess) {
                           if (state.trip != null) {
-                            context.push(RouteNames.editTrip, extra: state.trip);
+                            context.push(RouteNames.editTrip, extra: state.trip).then((_) {
+                              if (mounted) {
+                                _onTabSelected(_selectedTab);
+                              }
+                            });
                           }
                         } else if (state.status == TripStatus.detailError) {
                           AwesomeDialog(
@@ -309,32 +313,17 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         floatingActionButton: _selectedTab == DashboardTab.organise
             ? FloatingActionButton.extended(
-                onPressed: () => context.push(RouteNames.createTrip),
+                onPressed: () async {
+                  await context.push(RouteNames.createTrip);
+                  if (mounted) {
+                    _onTabSelected(_selectedTab);
+                  }
+                },
                 backgroundColor: AppColors.primary,
                 label: const Text('Create', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               )
             : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        // bottomNavigationBar: Container(
-        //   padding: const EdgeInsets.symmetric(vertical: 10),
-        //   decoration: const BoxDecoration(
-        //     color: AppColors.primary,
-        //     borderRadius: BorderRadius.only(
-        //       topLeft: Radius.circular(20),
-        //       topRight: Radius.circular(20),
-        //     ),
-        //   ),
-        //   child: Row(
-        //     mainAxisAlignment: MainAxisAlignment.spaceAround,
-        //     children: [
-        //       _buildNavItem(HugeIcons.strokeRoundedHome01, 0, isSelected: true),
-        //       _buildNavItem(HugeIcons.strokeRoundedCalendar01, 1),
-        //       _buildNavItem(HugeIcons.strokeRoundedAssignments, 2),
-        //       _buildNavItem(HugeIcons.strokeRoundedArrangeByNumbers19, 3, isSelected: false),
-        //       _buildNavItem(HugeIcons.strokeRoundedGroupLayers, 4),
-        //     ],
-        //   ),
-        // ),
       ),
     );
   }
